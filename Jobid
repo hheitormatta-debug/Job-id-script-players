@@ -1,0 +1,485 @@
+local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local player = Players.LocalPlayer
+
+local fileName = "JobIdData.json"
+_G.SavedJobIds = {}
+
+
+local function saveToFile()
+    if writefile then
+        local data = HttpService:JSONEncode(_G.SavedJobIds)
+        writefile(fileName, data)
+        local time = os.date("%Y-%m-%d_%H-%M-%S")
+        local backupName = "JobIdData_backup_" .. time .. ".json"
+        writefile(backupName, data)
+    end
+end
+
+local function loadFromFile()
+    if isfile and readfile and isfile(fileName) then
+        local success, data = pcall(function()
+            return HttpService:JSONDecode(readfile(fileName))
+        end)
+        if success and typeof(data) == "table" then
+            _G.SavedJobIds = data
+        end
+    end
+end
+
+loadFromFile()
+
+
+local function getGameName()
+    local success, result = pcall(function()
+        return game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name
+    end)
+    if success and result then
+        return result
+    end
+    return "Unknown Game"
+end
+
+local gameName = getGameName()
+
+
+local screenGui = Instance.new("ScreenGui", game.CoreGui)
+screenGui.Name = "JobIdGui"
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+
+local toggleButton = Instance.new("TextButton", screenGui)
+toggleButton.Size = UDim2.new(0, 80, 0, 30)
+toggleButton.Position = UDim2.new(0, 10, 0, 10)
+toggleButton.BackgroundColor3 = Color3.fromRGB(160, 160, 160)
+toggleButton.BackgroundTransparency = 0.1
+toggleButton.Text = "≡ Menu"
+toggleButton.TextColor3 = Color3.fromRGB(30, 30, 30)
+toggleButton.Font = Enum.Font.GothamBold
+toggleButton.TextSize = 14
+Instance.new("UICorner", toggleButton).CornerRadius = UDim.new(0, 8)
+
+
+local mainFrame = Instance.new("Frame", screenGui)
+mainFrame.Size = UDim2.new(0, 320, 0, 390)
+mainFrame.Position = UDim2.new(0.5, -160, 0.5, -195)
+mainFrame.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+mainFrame.BackgroundTransparency = 0.2
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.BorderSizePixel = 0
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
+
+
+local tabBar = Instance.new("Frame", mainFrame)
+tabBar.Size = UDim2.new(1, 0, 0, 32)
+tabBar.Position = UDim2.new(0, 0, 0, 0)
+tabBar.BackgroundColor3 = Color3.fromRGB(180, 180, 180)
+tabBar.BackgroundTransparency = 0.3
+tabBar.BorderSizePixel = 0
+Instance.new("UICorner", tabBar).CornerRadius = UDim.new(0, 12)
+
+local tabMain = Instance.new("TextButton", tabBar)
+tabMain.Text = "📋 Job IDs"
+tabMain.Size = UDim2.new(0.5, -2, 1, 0)
+tabMain.Position = UDim2.new(0, 2, 0, 0)
+tabMain.BackgroundColor3 = Color3.fromRGB(160, 160, 160)
+tabMain.TextColor3 = Color3.fromRGB(20, 20, 20)
+tabMain.Font = Enum.Font.GothamBold
+tabMain.TextSize = 12
+tabMain.BorderSizePixel = 0
+Instance.new("UICorner", tabMain).CornerRadius = UDim.new(0, 8)
+
+local tabServers = Instance.new("TextButton", tabBar)
+tabServers.Text = "🔍 Find Server"
+tabServers.Size = UDim2.new(0.5, -2, 1, 0)
+tabServers.Position = UDim2.new(0.5, 0, 0, 0)
+tabServers.BackgroundColor3 = Color3.fromRGB(210, 210, 210)
+tabServers.TextColor3 = Color3.fromRGB(80, 80, 80)
+tabServers.Font = Enum.Font.GothamBold
+tabServers.TextSize = 12
+tabServers.BorderSizePixel = 0
+Instance.new("UICorner", tabServers).CornerRadius = UDim.new(0, 8)
+
+
+local page1 = Instance.new("Frame", mainFrame)
+page1.Size = UDim2.new(1, 0, 1, -34)
+page1.Position = UDim2.new(0, 0, 0, 34)
+page1.BackgroundTransparency = 1
+page1.BorderSizePixel = 0
+
+local jobBox = Instance.new("TextBox", page1)
+jobBox.Size = UDim2.new(0, 280, 0, 30)
+jobBox.Position = UDim2.new(0, 20, 0, 10)
+jobBox.PlaceholderText = "Enter JobId here"
+jobBox.Text = ""
+jobBox.BackgroundColor3 = Color3.fromRGB(220, 220, 220)
+jobBox.TextColor3 = Color3.fromRGB(50, 50, 50)
+jobBox.ClearTextOnFocus = false
+Instance.new("UICorner", jobBox).CornerRadius = UDim.new(0, 8)
+
+local labelBox = Instance.new("TextBox", page1)
+labelBox.Size = UDim2.new(0, 280, 0, 30)
+labelBox.Position = UDim2.new(0, 20, 0, 48)
+labelBox.PlaceholderText = "Label this server"
+labelBox.Text = ""
+labelBox.BackgroundColor3 = Color3.fromRGB(220, 220, 220)
+labelBox.TextColor3 = Color3.fromRGB(50, 50, 50)
+labelBox.ClearTextOnFocus = false
+Instance.new("UICorner", labelBox).CornerRadius = UDim.new(0, 8)
+
+local copyBtn = Instance.new("TextButton", page1)
+copyBtn.Text = "Copy Current JobId"
+copyBtn.Size = UDim2.new(0, 280, 0, 30)
+copyBtn.Position = UDim2.new(0, 20, 0, 86)
+copyBtn.BackgroundColor3 = Color3.fromRGB(180, 180, 180)
+copyBtn.TextColor3 = Color3.fromRGB(30, 30, 30)
+Instance.new("UICorner", copyBtn).CornerRadius = UDim.new(0, 8)
+
+local joinBtn = Instance.new("TextButton", page1)
+joinBtn.Text = "Join JobId"
+joinBtn.Size = UDim2.new(0, 134, 0, 30)
+joinBtn.Position = UDim2.new(0, 20, 0, 124)
+joinBtn.BackgroundColor3 = Color3.fromRGB(180, 180, 180)
+joinBtn.TextColor3 = Color3.fromRGB(30, 30, 30)
+Instance.new("UICorner", joinBtn).CornerRadius = UDim.new(0, 8)
+
+local saveBtn = Instance.new("TextButton", page1)
+saveBtn.Text = "Save JobId"
+saveBtn.Size = UDim2.new(0, 134, 0, 30)
+saveBtn.Position = UDim2.new(0, 166, 0, 124)
+saveBtn.BackgroundColor3 = Color3.fromRGB(180, 180, 180)
+saveBtn.TextColor3 = Color3.fromRGB(30, 30, 30)
+Instance.new("UICorner", saveBtn).CornerRadius = UDim.new(0, 8)
+
+local savedList = Instance.new("ScrollingFrame", page1)
+savedList.Size = UDim2.new(0, 280, 0, 155)
+savedList.Position = UDim2.new(0, 20, 0, 164)
+savedList.CanvasSize = UDim2.new(0, 0, 0, 0)
+savedList.ScrollBarThickness = 4
+savedList.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
+savedList.BackgroundTransparency = 0.2
+savedList.BorderSizePixel = 0
+Instance.new("UICorner", savedList).CornerRadius = UDim.new(0, 8)
+
+
+local function refreshSavedList()
+    savedList:ClearAllChildren()
+    local y = 0
+    for index, saved in ipairs(_G.SavedJobIds) do
+        local item = Instance.new("Frame", savedList)
+        item.Size = UDim2.new(1, 0, 0, 38)
+        item.Position = UDim2.new(0, 0, 0, y)
+        item.BackgroundTransparency = 1
+
+        
+        local lbl = Instance.new("TextLabel", item)
+        lbl.Text = "🏷 " .. saved.label
+        lbl.Size = UDim2.new(1, -100, 0, 16)
+        lbl.Position = UDim2.new(0, 6, 0, 1)
+        lbl.BackgroundTransparency = 1
+        lbl.TextColor3 = Color3.fromRGB(20, 20, 20)
+        lbl.Font = Enum.Font.GothamBold
+        lbl.TextSize = 12
+        lbl.TextXAlignment = Enum.TextXAlignment.Left
+        lbl.TextTruncate = Enum.TextTruncate.AtEnd
+
+        
+        local gameLbl = Instance.new("TextLabel", item)
+        gameLbl.Text = "🎮 " .. (saved.gameName or "Unknown Game")
+        gameLbl.Size = UDim2.new(1, -100, 0, 14)
+        gameLbl.Position = UDim2.new(0, 6, 0, 17)
+        gameLbl.BackgroundTransparency = 1
+        gameLbl.TextColor3 = Color3.fromRGB(80, 80, 80)
+        gameLbl.Font = Enum.Font.Gotham
+        gameLbl.TextSize = 10
+        gameLbl.TextXAlignment = Enum.TextXAlignment.Left
+        gameLbl.TextTruncate = Enum.TextTruncate.AtEnd
+
+        
+        local copy = Instance.new("TextButton", item)
+        copy.Text = "Copy"
+        copy.Size = UDim2.new(0, 44, 0, 26)
+        copy.Position = UDim2.new(1, -136, 0, 5)
+        copy.BackgroundColor3 = Color3.fromRGB(200, 200, 255)
+        copy.TextSize = 11
+        Instance.new("UICorner", copy).CornerRadius = UDim.new(0, 4)
+        copy.MouseButton1Click:Connect(function()
+            if setclipboard then setclipboard(saved.jobId) end
+        end)
+
+        
+        local join = Instance.new("TextButton", item)
+        join.Text = "Join"
+        join.Size = UDim2.new(0, 44, 0, 26)
+        join.Position = UDim2.new(1, -86, 0, 5)
+        join.BackgroundColor3 = Color3.fromRGB(180, 255, 180)
+        join.TextSize = 11
+        Instance.new("UICorner", join).CornerRadius = UDim.new(0, 4)
+        join.MouseButton1Click:Connect(function()
+            TeleportService:TeleportToPlaceInstance(game.PlaceId, saved.jobId, player)
+        end)
+
+        
+        local del = Instance.new("TextButton", item)
+        del.Text = "X"
+        del.Size = UDim2.new(0, 28, 0, 26)
+        del.Position = UDim2.new(1, -34, 0, 5)
+        del.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
+        del.TextColor3 = Color3.fromRGB(255, 255, 255)
+        del.TextSize = 11
+        Instance.new("UICorner", del).CornerRadius = UDim.new(0, 4)
+        del.MouseButton1Click:Connect(function()
+            table.remove(_G.SavedJobIds, index)
+            saveToFile()
+            refreshSavedList()
+        end)
+
+        y += 40
+    end
+    savedList.CanvasSize = UDim2.new(0, 0, 0, y)
+end
+
+
+local page2 = Instance.new("Frame", mainFrame)
+page2.Size = UDim2.new(1, 0, 1, -34)
+page2.Position = UDim2.new(0, 0, 0, 34)
+page2.BackgroundTransparency = 1
+page2.BorderSizePixel = 0
+page2.Visible = false
+
+
+local findTitle = Instance.new("TextLabel", page2)
+findTitle.Text = "Go to server with few players"
+findTitle.Size = UDim2.new(1, -20, 0, 22)
+findTitle.Position = UDim2.new(0, 10, 0, 10)
+findTitle.BackgroundTransparency = 1
+findTitle.TextColor3 = Color3.fromRGB(30, 30, 30)
+findTitle.Font = Enum.Font.GothamBold
+findTitle.TextSize = 14
+findTitle.TextXAlignment = Enum.TextXAlignment.Center
+
+
+local fewDesc = Instance.new("TextLabel", page2)
+fewDesc.Text = "Finds the server with the fewest players online."
+fewDesc.Size = UDim2.new(1, -20, 0, 30)
+fewDesc.Position = UDim2.new(0, 10, 0, 36)
+fewDesc.BackgroundColor3 = Color3.fromRGB(235, 235, 235)
+fewDesc.BackgroundTransparency = 0.3
+fewDesc.TextColor3 = Color3.fromRGB(60, 60, 60)
+fewDesc.Font = Enum.Font.Gotham
+fewDesc.TextSize = 11
+fewDesc.TextWrapped = true
+fewDesc.BorderSizePixel = 0
+Instance.new("UICorner", fewDesc).CornerRadius = UDim.new(0, 6)
+
+
+local fewBtn = Instance.new("TextButton", page2)
+fewBtn.Text = "⬇ Go in few players server"
+fewBtn.Size = UDim2.new(0, 280, 0, 36)
+fewBtn.Position = UDim2.new(0, 20, 0, 76)
+fewBtn.BackgroundColor3 = Color3.fromRGB(130, 200, 255)
+fewBtn.TextColor3 = Color3.fromRGB(10, 10, 10)
+fewBtn.Font = Enum.Font.GothamBold
+fewBtn.TextSize = 14
+fewBtn.BorderSizePixel = 0
+Instance.new("UICorner", fewBtn).CornerRadius = UDim.new(0, 10)
+
+
+local divider = Instance.new("Frame", page2)
+divider.Size = UDim2.new(0, 260, 0, 1)
+divider.Position = UDim2.new(0, 30, 0, 128)
+divider.BackgroundColor3 = Color3.fromRGB(160, 160, 160)
+divider.BackgroundTransparency = 0.3
+divider.BorderSizePixel = 0
+
+
+local mostTitle = Instance.new("TextLabel", page2)
+mostTitle.Text = "Go to The server with most players"
+mostTitle.Size = UDim2.new(1, -20, 0, 22)
+mostTitle.Position = UDim2.new(0, 10, 0, 138)
+mostTitle.BackgroundTransparency = 1
+mostTitle.TextColor3 = Color3.fromRGB(30, 30, 30)
+mostTitle.Font = Enum.Font.GothamBold
+mostTitle.TextSize = 14
+mostTitle.TextXAlignment = Enum.TextXAlignment.Center
+
+
+local mostDesc = Instance.new("TextLabel", page2)
+mostDesc.Text = "Finds the server with the most players online."
+mostDesc.Size = UDim2.new(1, -20, 0, 30)
+mostDesc.Position = UDim2.new(0, 10, 0, 164)
+mostDesc.BackgroundColor3 = Color3.fromRGB(235, 235, 235)
+mostDesc.BackgroundTransparency = 0.3
+mostDesc.TextColor3 = Color3.fromRGB(60, 60, 60)
+mostDesc.Font = Enum.Font.Gotham
+mostDesc.TextSize = 11
+mostDesc.TextWrapped = true
+mostDesc.BorderSizePixel = 0
+Instance.new("UICorner", mostDesc).CornerRadius = UDim.new(0, 6)
+
+
+local mostBtn = Instance.new("TextButton", page2)
+mostBtn.Text = "⬆ Go to The server with most players"
+mostBtn.Size = UDim2.new(0, 280, 0, 36)
+mostBtn.Position = UDim2.new(0, 20, 0, 204)
+mostBtn.BackgroundColor3 = Color3.fromRGB(255, 180, 100)
+mostBtn.TextColor3 = Color3.fromRGB(10, 10, 10)
+mostBtn.Font = Enum.Font.GothamBold
+mostBtn.TextSize = 13
+mostBtn.BorderSizePixel = 0
+Instance.new("UICorner", mostBtn).CornerRadius = UDim.new(0, 10)
+
+-- Status label (shared for page2 feedback)
+local statusLabel = Instance.new("TextLabel", page2)
+statusLabel.Text = ""
+statusLabel.Size = UDim2.new(1, -20, 0, 30)
+statusLabel.Position = UDim2.new(0, 10, 0, 252)
+statusLabel.BackgroundTransparency = 1
+statusLabel.TextColor3 = Color3.fromRGB(50, 50, 50)
+statusLabel.Font = Enum.Font.Gotham
+statusLabel.TextSize = 11
+statusLabel.TextWrapped = true
+statusLabel.TextXAlignment = Enum.TextXAlignment.Center
+
+
+local function getServers(onFound)
+    statusLabel.Text = "⏳ Searching servers..."
+    task.spawn(function()
+        local success, servers = pcall(function()
+            return HttpService:JSONDecode(
+                game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100")
+            )
+        end)
+        if not success or not servers or not servers.data then
+            statusLabel.Text = "❌ Could not fetch servers."
+            return
+        end
+        onFound(servers.data)
+    end)
+end
+
+
+fewBtn.MouseButton1Click:Connect(function()
+    getServers(function(data)
+        if #data == 0 then
+            statusLabel.Text = "❌ No servers found."
+            return
+        end
+        table.sort(data, function(a, b) return a.playing < b.playing end)
+        local target = data[1]
+        statusLabel.Text = "✅ Joining server with " .. target.playing .. " players..."
+        task.wait(1)
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, target.id, player)
+    end)
+end)
+
+
+mostBtn.MouseButton1Click:Connect(function()
+    getServers(function(data)
+        if #data == 0 then
+            statusLabel.Text = "❌ No servers found."
+            return
+        end
+        table.sort(data, function(a, b) return a.playing > b.playing end)
+        local target = data[1]
+        statusLabel.Text = "✅ Joining server with " .. target.playing .. " players..."
+        task.wait(1)
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, target.id, player)
+    end)
+end)
+
+
+local function switchTab(page, activeBtn, inactiveBtn)
+    page1.Visible = false
+    page2.Visible = false
+    page.Visible = true
+    activeBtn.BackgroundColor3 = Color3.fromRGB(160, 160, 160)
+    activeBtn.TextColor3 = Color3.fromRGB(20, 20, 20)
+    inactiveBtn.BackgroundColor3 = Color3.fromRGB(210, 210, 210)
+    inactiveBtn.TextColor3 = Color3.fromRGB(80, 80, 80)
+end
+
+tabMain.MouseButton1Click:Connect(function()
+    switchTab(page1, tabMain, tabServers)
+end)
+
+tabServers.MouseButton1Click:Connect(function()
+    switchTab(page2, tabServers, tabMain)
+    statusLabel.Text = ""
+end)
+
+
+toggleButton.MouseButton1Click:Connect(function()
+    mainFrame.Visible = not mainFrame.Visible
+end)
+
+copyBtn.MouseButton1Click:Connect(function()
+    if setclipboard then setclipboard(game.JobId) end
+end)
+
+joinBtn.MouseButton1Click:Connect(function()
+    local jobId = jobBox.Text
+    if jobId and jobId ~= "" then
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, jobId, player)
+    end
+end)
+
+saveBtn.MouseButton1Click:Connect(function()
+    local label = labelBox.Text
+    local jobId = jobBox.Text
+    if label ~= "" and jobId ~= "" then
+        table.insert(_G.SavedJobIds, {
+            label = label,
+            jobId = jobId,
+            gameName = gameName  -- saves the game name together!
+        })
+        saveToFile()
+        refreshSavedList()
+        labelBox.Text = ""
+        jobBox.Text = ""
+    end
+end)
+
+refreshSavedList()
+
+
+local notifFrame = Instance.new("Frame", screenGui)
+notifFrame.Size = UDim2.new(0, 280, 0, 80)
+notifFrame.Position = UDim2.new(1, -300, 1, -100)
+notifFrame.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+notifFrame.BackgroundTransparency = 0.1
+Instance.new("UICorner", notifFrame).CornerRadius = UDim.new(0, 10)
+
+local title = Instance.new("TextLabel", notifFrame)
+title.Text = "JoinId joiner w/ copyer"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 16
+title.TextColor3 = Color3.fromRGB(20, 20, 20)
+title.Size = UDim2.new(1, -20, 0, 30)
+title.Position = UDim2.new(0, 10, 0, 5)
+title.BackgroundTransparency = 1
+title.TextXAlignment = Enum.TextXAlignment.Left
+
+local footer = Instance.new("TextLabel", notifFrame)
+footer.Text = "modified by blockmango_fan_ | claude ai"
+footer.Font = Enum.Font.Gotham
+footer.TextSize = 12
+footer.TextColor3 = Color3.fromRGB(60, 60, 60)
+footer.Size = UDim2.new(1, -20, 0, 40)
+footer.Position = UDim2.new(0, 10, 0, 35)
+footer.BackgroundTransparency = 1
+footer.TextXAlignment = Enum.TextXAlignment.Left
+footer.TextYAlignment = Enum.TextYAlignment.Top
+
+task.delay(4, function()
+    for i = 0, 1, 0.05 do
+        notifFrame.BackgroundTransparency = 0.1 + i
+        title.TextTransparency = i
+        footer.TextTransparency = i
+        task.wait(0.03)
+    end
+    notifFrame:Destroy()
+end)
