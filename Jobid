@@ -5,74 +5,45 @@ local player = Players.LocalPlayer
 
 _G.SavedJobIds = {}
 
-local workspace = game:GetService("Workspace")
+local jobIdFolder = "Job id"
+local jobIdFile = jobIdFolder .. "/Configs Job id.json"
 
-local function createWorkspaceFolders()
-    if not workspace:FindFirstChild("Job id") then
-        local jobIdFolder = Instance.new("Folder", workspace)
-        jobIdFolder.Name = "Job id"
-        
-        local configsFolder = Instance.new("Folder", jobIdFolder)
-        configsFolder.Name = "Configs Job id"
-    end
-end
-
-local function saveJobIdToWorkspace(label, jobId, gameName)
-    local jobIdFolder = workspace:FindFirstChild("Job id")
-    if not jobIdFolder then
-        createWorkspaceFolders()
-        jobIdFolder = workspace:FindFirstChild("Job id")
-    end
-    
-    local configsFolder = jobIdFolder:FindFirstChild("Configs Job id")
-    
-    local existingEntry = configsFolder:FindFirstChild(label)
-    if existingEntry then
-        existingEntry:Destroy()
-    end
-    
-    local jobEntry = Instance.new("StringValue", configsFolder)
-    jobEntry.Name = label
-    jobEntry.Value = jobId .. "|" .. gameName
-end
-
-local function removeJobIdFromWorkspace(label)
-    local jobIdFolder = workspace:FindFirstChild("Job id")
-    if jobIdFolder then
-        local configsFolder = jobIdFolder:FindFirstChild("Configs Job id")
-        if configsFolder then
-            local jobEntry = configsFolder:FindFirstChild(label)
-            if jobEntry then
-                jobEntry:Destroy()
+local function ensureFolder()
+    if makefolder and isfolder then
+        pcall(function()
+            if not isfolder(jobIdFolder) then
+                makefolder(jobIdFolder)
             end
-        end
+        end)
     end
 end
 
-local function loadFromWorkspace()
-    createWorkspaceFolders()
-    
-    local jobIdFolder = workspace:FindFirstChild("Job id")
-    if jobIdFolder then
-        local configsFolder = jobIdFolder:FindFirstChild("Configs Job id")
-        if configsFolder then
-            for _, jobEntry in ipairs(configsFolder:GetChildren()) do
-                if jobEntry:IsA("StringValue") then
-                    local parts = string.split(jobEntry.Value, "|")
-                    if #parts == 2 then
-                        table.insert(_G.SavedJobIds, {
-                            label = jobEntry.Name,
-                            jobId = parts[1],
-                            gameName = parts[2]
-                        })
-                    end
+local function saveToFile()
+    ensureFolder()
+    if writefile then
+        pcall(function()
+            local data = HttpService:JSONEncode(_G.SavedJobIds)
+            writefile(jobIdFile, data)
+        end)
+    end
+end
+
+local function loadFromFile()
+    if isfile and readfile then
+        pcall(function()
+            if isfile(jobIdFile) then
+                local success, data = pcall(function()
+                    return HttpService:JSONDecode(readfile(jobIdFile))
+                end)
+                if success and typeof(data) == "table" then
+                    _G.SavedJobIds = data
                 end
             end
-        end
+        end)
     end
 end
 
-loadFromWorkspace()
+loadFromFile()
 
 local function getGameName()
     local success, result = pcall(function()
@@ -264,13 +235,13 @@ local function refreshSavedList()
             delete.TextSize = 11
             Instance.new("UICorner", delete).CornerRadius = UDim.new(0, 4)
             delete.MouseButton1Click:Connect(function()
-                removeJobIdFromWorkspace(saved.label)
                 for i = #_G.SavedJobIds, 1, -1 do
                     if _G.SavedJobIds[i].label == saved.label then
                         table.remove(_G.SavedJobIds, i)
                         break
                     end
                 end
+                saveToFile()
                 refreshSavedList()
             end)
 
@@ -460,7 +431,7 @@ saveBtn.MouseButton1Click:Connect(function()
             jobId = jobId,
             gameName = gameName
         })
-        saveJobIdToWorkspace(label, jobId, gameName)
+        saveToFile()
         refreshSavedList()
         labelBox.Text = ""
         jobBox.Text = ""
