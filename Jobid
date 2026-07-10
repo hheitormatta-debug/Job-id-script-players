@@ -9,38 +9,23 @@ local jobIdFolder = "Job id"
 local jobIdFile = jobIdFolder .. "/Configs Job id.json"
 
 local function ensureFolder()
-    if makefolder and isfolder then
-        pcall(function()
-            if not isfolder(jobIdFolder) then
-                makefolder(jobIdFolder)
-            end
-        end)
-    end
+    pcall(makefolder, jobIdFolder)
 end
 
 local function saveToFile()
     ensureFolder()
-    if writefile then
-        pcall(function()
-            local data = HttpService:JSONEncode(_G.SavedJobIds)
-            writefile(jobIdFile, data)
-        end)
-    end
+    pcall(writefile, jobIdFile, HttpService:JSONEncode(_G.SavedJobIds))
 end
 
 local function loadFromFile()
-    if isfile and readfile then
-        pcall(function()
-            if isfile(jobIdFile) then
-                local success, data = pcall(function()
-                    return HttpService:JSONDecode(readfile(jobIdFile))
-                end)
-                if success and typeof(data) == "table" then
-                    _G.SavedJobIds = data
-                end
+    pcall(function()
+        if isfile(jobIdFile) then
+            local success, data = pcall(HttpService.JSONDecode, HttpService, readfile(jobIdFile))
+            if success and typeof(data) == "table" then
+                _G.SavedJobIds = data
             end
-        end)
-    end
+        end
+    end)
 end
 
 loadFromFile()
@@ -208,7 +193,7 @@ local function refreshSavedList()
             local copy = Instance.new("TextButton", item)
             copy.Text = "Copy"
             copy.Size = UDim2.new(0, 44, 0, 26)
-            copy.Position = UDim2.new(1, -136, 0, 5)
+            copy.Position = UDim2.new(1, -142, 0, 5)
             copy.BackgroundColor3 = Color3.fromRGB(200, 200, 255)
             copy.TextSize = 11
             Instance.new("UICorner", copy).CornerRadius = UDim.new(0, 4)
@@ -219,7 +204,7 @@ local function refreshSavedList()
             local join = Instance.new("TextButton", item)
             join.Text = "Join"
             join.Size = UDim2.new(0, 44, 0, 26)
-            join.Position = UDim2.new(1, -86, 0, 5)
+            join.Position = UDim2.new(1, -94, 0, 5)
             join.BackgroundColor3 = Color3.fromRGB(180, 255, 180)
             join.TextSize = 11
             Instance.new("UICorner", join).CornerRadius = UDim.new(0, 4)
