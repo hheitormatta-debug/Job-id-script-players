@@ -165,24 +165,93 @@ savedList.BackgroundTransparency = 0.2
 savedList.BorderSizePixel = 0
 Instance.new("UICorner", savedList).CornerRadius = UDim.new(0, 8)
 
-local function getServerPlayerCount(jobId)
-    local success, result = pcall(function()
-        return HttpService:JSONDecode(
-            game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100")
-        )
-    end)
-    if success and result and result.data then
+local playerCountLabels = {}
+local isUpdatingPlayerCounts = false
+local refreshSavedList
+local updatePlayerCounts
+
+local function fetchAllServers()
+    local servers = {}
+    local cursor = ""
+    local pages = 0
+    local anySuccess = false
+    repeat
+        local url = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
+        if cursor ~= "" then
+            url = url .. "&cursor=" .. HttpService:UrlEncode(cursor)
+        end
+        local success, result = pcall(function()
+            return HttpService:JSONDecode(game:HttpGet(url))
+        end)
+        if not success or not result or not result.data then
+            break
+        end
+        anySuccess = true
         for _, server in ipairs(result.data) do
-            if server.id == jobId then
-                return server.playing, server.maxPlayers
+            table.insert(servers, server)
+        end
+        cursor = result.nextPageCursor
+        pages = pages + 1
+    until not cursor or cursor == "" or pages >= 10
+    return servers, anySuccess
+end
+
+updatePlayerCounts = function()
+    if isUpdatingPlayerCounts then
+        return
+    end
+    isUpdatingPlayerCounts = true
+
+    local servers, success = fetchAllServers()
+    if not success then
+        isUpdatingPlayerCounts = false
+        return
+    end
+
+    local lookup = {}
+    for _, server in ipairs(servers) do
+        lookup[server.id] = server
+    end
+
+    local toRemove = {}
+    for _, saved in ipairs(_G.SavedJobIds) do
+        if saved.gameName == gameName then
+            local server = lookup[saved.jobId]
+            if server then
+                local label = playerCountLabels[saved.label]
+                if label then
+                    label.Text = "👥 Players: " .. server.playing .. "/" .. server.maxPlayers
+                end
+                if server.playing <= 0 then
+                    table.insert(toRemove, saved.label)
+                end
+            else
+                table.insert(toRemove, saved.label)
             end
         end
     end
-    return 0, 0
+
+    if #toRemove > 0 then
+        for _, labelToRemove in ipairs(toRemove) do
+            for i = #_G.SavedJobIds, 1, -1 do
+                if _G.SavedJobIds[i].label == labelToRemove then
+                    table.remove(_G.SavedJobIds, i)
+                    break
+                end
+            end
+        end
+        saveToFile()
+        isUpdatingPlayerCounts = false
+        refreshSavedList()
+        return
+    end
+
+    isUpdatingPlayerCounts = false
 end
 
-local function refreshSavedList()
+refreshSavedList = function()
     savedList:ClearAllChildren()
+    playerCountLabels = {}
     local y = 0
     for index, saved in ipairs(_G.SavedJobIds) do
         if saved.gameName == gameName then
@@ -223,10 +292,7 @@ local function refreshSavedList()
             playersLbl.TextSize = 9
             playersLbl.TextXAlignment = Enum.TextXAlignment.Left
 
-            task.spawn(function()
-                local playing, maxPlayers = getServerPlayerCount(saved.jobId)
-                playersLbl.Text = "👥 Players: " .. playing .. "/" .. maxPlayers
-            end)
+            playerCountLabels[saved.label] = playersLbl
 
             local copy = Instance.new("TextButton", item)
             copy.Text = "Copy"
@@ -272,6 +338,7 @@ local function refreshSavedList()
         end
     end
     savedList.CanvasSize = UDim2.new(0, 0, 0, y)
+    task.spawn(updatePlayerCounts)
 end
 
 local page2 = Instance.new("Frame", mainFrame)
@@ -370,16 +437,12 @@ statusLabel.TextXAlignment = Enum.TextXAlignment.Center
 local function getServers(onFound)
     statusLabel.Text = "⏳ Searching servers..."
     task.spawn(function()
-        local success, servers = pcall(function()
-            return HttpService:JSONDecode(
-                game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100")
-            )
-        end)
-        if not success or not servers or not servers.data then
+        local servers, success = fetchAllServers()
+        if not success or #servers == 0 then
             statusLabel.Text = "❌ Could not fetch servers."
             return
         end
-        onFound(servers.data)
+        onFound(servers)
     end)
 end
 
@@ -466,6 +529,13 @@ saveBtn.MouseButton1Click:Connect(function()
 end)
 
 refreshSavedList()
+
+task.spawn(function()
+    while true do
+        task.wait(5)
+        pcall(updatePlayerCounts)
+    end
+end)
 
 local notifFrame = Instance.new("Frame", screenGui)
 notifFrame.Size = UDim2.new(0, 280, 0, 80)
