@@ -30,6 +30,13 @@ end
 
 loadFromFile()
 
+task.spawn(function()
+    while true do
+        task.wait(1)
+        pcall(saveToFile)
+    end
+end)
+
 local function getGameName()
     local success, result = pcall(function()
         return game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name
@@ -158,13 +165,29 @@ savedList.BackgroundTransparency = 0.2
 savedList.BorderSizePixel = 0
 Instance.new("UICorner", savedList).CornerRadius = UDim.new(0, 8)
 
+local function getServerPlayerCount(jobId)
+    local success, result = pcall(function()
+        return HttpService:JSONDecode(
+            game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100")
+        )
+    end)
+    if success and result and result.data then
+        for _, server in ipairs(result.data) do
+            if server.id == jobId then
+                return server.playing, server.maxPlayers
+            end
+        end
+    end
+    return 0, 0
+end
+
 local function refreshSavedList()
     savedList:ClearAllChildren()
     local y = 0
     for index, saved in ipairs(_G.SavedJobIds) do
         if saved.gameName == gameName then
             local item = Instance.new("Frame", savedList)
-            item.Size = UDim2.new(1, 0, 0, 38)
+            item.Size = UDim2.new(1, 0, 0, 50)
             item.Position = UDim2.new(0, 0, 0, y)
             item.BackgroundTransparency = 1
 
@@ -181,7 +204,7 @@ local function refreshSavedList()
 
             local gameLbl = Instance.new("TextLabel", item)
             gameLbl.Text = "🎮 " .. (saved.gameName or "Unknown Game")
-            gameLbl.Size = UDim2.new(1, -100, 0, 14)
+            gameLbl.Size = UDim2.new(1, -100, 0, 12)
             gameLbl.Position = UDim2.new(0, 6, 0, 17)
             gameLbl.BackgroundTransparency = 1
             gameLbl.TextColor3 = Color3.fromRGB(80, 80, 80)
@@ -189,6 +212,21 @@ local function refreshSavedList()
             gameLbl.TextSize = 10
             gameLbl.TextXAlignment = Enum.TextXAlignment.Left
             gameLbl.TextTruncate = Enum.TextTruncate.AtEnd
+
+            local playersLbl = Instance.new("TextLabel", item)
+            playersLbl.Text = "👥 Players: ..."
+            playersLbl.Size = UDim2.new(1, -100, 0, 12)
+            playersLbl.Position = UDim2.new(0, 6, 0, 30)
+            playersLbl.BackgroundTransparency = 1
+            playersLbl.TextColor3 = Color3.fromRGB(100, 100, 100)
+            playersLbl.Font = Enum.Font.Gotham
+            playersLbl.TextSize = 9
+            playersLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+            task.spawn(function()
+                local playing, maxPlayers = getServerPlayerCount(saved.jobId)
+                playersLbl.Text = "👥 Players: " .. playing .. "/" .. maxPlayers
+            end)
 
             local copy = Instance.new("TextButton", item)
             copy.Text = "Copy"
@@ -230,7 +268,7 @@ local function refreshSavedList()
                 refreshSavedList()
             end)
 
-            y = y + 40
+            y = y + 52
         end
     end
     savedList.CanvasSize = UDim2.new(0, 0, 0, y)
@@ -285,7 +323,7 @@ divider.BackgroundTransparency = 0.3
 divider.BorderSizePixel = 0
 
 local mostTitle = Instance.new("TextLabel", page2)
-mostTitle.Text = "Go to The server with most players"
+mostTitle.Text = "Go to server with max-1 players"
 mostTitle.Size = UDim2.new(1, -20, 0, 22)
 mostTitle.Position = UDim2.new(0, 10, 0, 138)
 mostTitle.BackgroundTransparency = 1
@@ -295,7 +333,7 @@ mostTitle.TextSize = 14
 mostTitle.TextXAlignment = Enum.TextXAlignment.Center
 
 local mostDesc = Instance.new("TextLabel", page2)
-mostDesc.Text = "Finds the server with the most players online."
+mostDesc.Text = "Finds the server closest to max capacity -1 player."
 mostDesc.Size = UDim2.new(1, -20, 0, 30)
 mostDesc.Position = UDim2.new(0, 10, 0, 164)
 mostDesc.BackgroundColor3 = Color3.fromRGB(235, 235, 235)
@@ -308,7 +346,7 @@ mostDesc.BorderSizePixel = 0
 Instance.new("UICorner", mostDesc).CornerRadius = UDim.new(0, 6)
 
 local mostBtn = Instance.new("TextButton", page2)
-mostBtn.Text = "⬆ Go to The server with most players"
+mostBtn.Text = "⬆ Go to server with max-1 players"
 mostBtn.Size = UDim2.new(0, 280, 0, 36)
 mostBtn.Position = UDim2.new(0, 20, 0, 204)
 mostBtn.BackgroundColor3 = Color3.fromRGB(255, 180, 100)
@@ -353,7 +391,7 @@ fewBtn.MouseButton1Click:Connect(function()
         end
         table.sort(data, function(a, b) return a.playing < b.playing end)
         local target = data[1]
-        statusLabel.Text = "✅ Joining server with " .. target.playing .. " players..."
+        statusLabel.Text = "✅ Joining server with " .. target.playing .. "/" .. target.maxPlayers .. " players..."
         task.wait(1)
         TeleportService:TeleportToPlaceInstance(game.PlaceId, target.id, player)
     end)
@@ -365,9 +403,13 @@ mostBtn.MouseButton1Click:Connect(function()
             statusLabel.Text = "❌ No servers found."
             return
         end
-        table.sort(data, function(a, b) return a.playing > b.playing end)
+        table.sort(data, function(a, b)
+            local aScore = math.abs((a.maxPlayers - 1) - a.playing)
+            local bScore = math.abs((b.maxPlayers - 1) - b.playing)
+            return aScore < bScore
+        end)
         local target = data[1]
-        statusLabel.Text = "✅ Joining server with " .. target.playing .. " players..."
+        statusLabel.Text = "✅ Joining server with " .. target.playing .. "/" .. target.maxPlayers .. " players..."
         task.wait(1)
         TeleportService:TeleportToPlaceInstance(game.PlaceId, target.id, player)
     end)
