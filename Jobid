@@ -3,23 +3,22 @@ local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 local player = Players.LocalPlayer
 
-local fileName = "JobIdData.json"
 _G.SavedJobIds = {}
+
+local jobIdFolder = "Job id"
+local jobIdFile = jobIdFolder .. "/Configs Job id.json"
 
 local function saveToFile()
     if writefile then
         local data = HttpService:JSONEncode(_G.SavedJobIds)
-        writefile(fileName, data)
-        local time = os.date("%Y-%m-%d_%H-%M-%S")
-        local backupName = "JobIdData_backup_" .. time .. ".json"
-        writefile(backupName, data)
+        writefile(jobIdFile, data)
     end
 end
 
 local function loadFromFile()
-    if isfile and readfile and isfile(fileName) then
+    if isfile and readfile and isfile(jobIdFile) then
         local success, data = pcall(function()
-            return HttpService:JSONDecode(readfile(fileName))
+            return HttpService:JSONDecode(readfile(jobIdFile))
         end)
         if success and typeof(data) == "table" then
             _G.SavedJobIds = data
@@ -212,14 +211,19 @@ local function refreshSavedList()
             end)
 
             local delete = Instance.new("TextButton", item)
-            delete.Text = "🗑"
+            delete.Text = "X"
             delete.Size = UDim2.new(0, 44, 0, 26)
             delete.Position = UDim2.new(1, -44, 0, 5)
             delete.BackgroundColor3 = Color3.fromRGB(255, 150, 150)
             delete.TextSize = 11
             Instance.new("UICorner", delete).CornerRadius = UDim.new(0, 4)
             delete.MouseButton1Click:Connect(function()
-                table.remove(_G.SavedJobIds, index)
+                for i = #_G.SavedJobIds, 1, -1 do
+                    if _G.SavedJobIds[i].label == saved.label then
+                        table.remove(_G.SavedJobIds, i)
+                        break
+                    end
+                end
                 saveToFile()
                 refreshSavedList()
             end)
@@ -437,7 +441,7 @@ title.BackgroundTransparency = 1
 title.TextXAlignment = Enum.TextXAlignment.Left
 
 local footer = Instance.new("TextLabel", notifFrame)
-footer.Text = "made by Jardin💭\n🎉GPT🎉"
+footer.Text = "Modified by blockmango fan | Claude ai"
 footer.Font = Enum.Font.Gotham
 footer.TextSize = 12
 footer.TextColor3 = Color3.fromRGB(60, 60, 60)
