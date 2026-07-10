@@ -170,6 +170,92 @@ local isUpdatingPlayerCounts = false
 local refreshSavedList
 local updatePlayerCounts
 
+local confirmOverlay = Instance.new("Frame", screenGui)
+confirmOverlay.Size = UDim2.new(1, 0, 1, 0)
+confirmOverlay.Position = UDim2.new(0, 0, 0, 0)
+confirmOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+confirmOverlay.BackgroundTransparency = 0.5
+confirmOverlay.BorderSizePixel = 0
+confirmOverlay.ZIndex = 50
+confirmOverlay.Visible = false
+confirmOverlay.Active = true
+
+local overlayBlocker = Instance.new("TextButton", confirmOverlay)
+overlayBlocker.Size = UDim2.new(1, 0, 1, 0)
+overlayBlocker.BackgroundTransparency = 1
+overlayBlocker.Text = ""
+overlayBlocker.ZIndex = 50
+
+local confirmBox = Instance.new("Frame", confirmOverlay)
+confirmBox.Size = UDim2.new(0, 240, 0, 130)
+confirmBox.AnchorPoint = Vector2.new(0.5, 0.5)
+confirmBox.Position = UDim2.new(0.5, 0, 0.5, 0)
+confirmBox.BackgroundColor3 = Color3.fromRGB(210, 210, 210)
+confirmBox.BorderSizePixel = 0
+confirmBox.ZIndex = 51
+Instance.new("UICorner", confirmBox).CornerRadius = UDim.new(0, 12)
+
+local confirmTitle = Instance.new("TextLabel", confirmBox)
+confirmTitle.Text = "Do You want to delete This?"
+confirmTitle.Size = UDim2.new(1, -20, 0, 50)
+confirmTitle.Position = UDim2.new(0, 10, 0, 14)
+confirmTitle.BackgroundTransparency = 1
+confirmTitle.TextColor3 = Color3.fromRGB(20, 20, 20)
+confirmTitle.Font = Enum.Font.GothamBold
+confirmTitle.TextSize = 15
+confirmTitle.TextWrapped = true
+confirmTitle.TextXAlignment = Enum.TextXAlignment.Center
+confirmTitle.ZIndex = 52
+
+local confirmNo = Instance.new("TextButton", confirmBox)
+confirmNo.Text = "No"
+confirmNo.Size = UDim2.new(0, 90, 0, 34)
+confirmNo.Position = UDim2.new(0, 20, 1, -50)
+confirmNo.BackgroundColor3 = Color3.fromRGB(220, 220, 220)
+confirmNo.TextColor3 = Color3.fromRGB(30, 30, 30)
+confirmNo.Font = Enum.Font.GothamBold
+confirmNo.TextSize = 13
+confirmNo.ZIndex = 52
+Instance.new("UICorner", confirmNo).CornerRadius = UDim.new(0, 8)
+
+local confirmYes = Instance.new("TextButton", confirmBox)
+confirmYes.Text = "Yes"
+confirmYes.Size = UDim2.new(0, 90, 0, 34)
+confirmYes.Position = UDim2.new(1, -110, 1, -50)
+confirmYes.BackgroundColor3 = Color3.fromRGB(255, 150, 150)
+confirmYes.TextColor3 = Color3.fromRGB(30, 30, 30)
+confirmYes.Font = Enum.Font.GothamBold
+confirmYes.TextSize = 13
+confirmYes.ZIndex = 52
+Instance.new("UICorner", confirmYes).CornerRadius = UDim.new(0, 8)
+
+local pendingDeleteLabel = nil
+
+local function showDeleteConfirm(labelToDelete)
+    pendingDeleteLabel = labelToDelete
+    confirmOverlay.Visible = true
+end
+
+confirmNo.MouseButton1Click:Connect(function()
+    pendingDeleteLabel = nil
+    confirmOverlay.Visible = false
+end)
+
+confirmYes.MouseButton1Click:Connect(function()
+    if pendingDeleteLabel then
+        for i = #_G.SavedJobIds, 1, -1 do
+            if _G.SavedJobIds[i].label == pendingDeleteLabel then
+                table.remove(_G.SavedJobIds, i)
+                break
+            end
+        end
+        saveToFile()
+        refreshSavedList()
+    end
+    pendingDeleteLabel = nil
+    confirmOverlay.Visible = false
+end)
+
 local function fetchAllServers()
     local servers = {}
     local cursor = ""
@@ -218,6 +304,8 @@ updatePlayerCounts = function()
         if saved.gameName == gameName then
             local server = lookup[saved.jobId]
             if server then
+                saved.playing = server.playing
+                saved.maxPlayers = server.maxPlayers
                 local label = playerCountLabels[saved.label]
                 if label then
                     label.Text = "👥 Players: " .. server.playing .. "/" .. server.maxPlayers
@@ -283,7 +371,11 @@ refreshSavedList = function()
             gameLbl.TextTruncate = Enum.TextTruncate.AtEnd
 
             local playersLbl = Instance.new("TextLabel", item)
-            playersLbl.Text = "👥 Players: ..."
+            if saved.playing and saved.maxPlayers then
+                playersLbl.Text = "👥 Players: " .. saved.playing .. "/" .. saved.maxPlayers
+            else
+                playersLbl.Text = "👥 Players: ..."
+            end
             playersLbl.Size = UDim2.new(1, -100, 0, 12)
             playersLbl.Position = UDim2.new(0, 6, 0, 30)
             playersLbl.BackgroundTransparency = 1
@@ -324,14 +416,7 @@ refreshSavedList = function()
             delete.TextSize = 11
             Instance.new("UICorner", delete).CornerRadius = UDim.new(0, 4)
             delete.MouseButton1Click:Connect(function()
-                for i = #_G.SavedJobIds, 1, -1 do
-                    if _G.SavedJobIds[i].label == saved.label then
-                        table.remove(_G.SavedJobIds, i)
-                        break
-                    end
-                end
-                saveToFile()
-                refreshSavedList()
+                showDeleteConfirm(saved.label)
             end)
 
             y = y + 52
@@ -532,7 +617,7 @@ refreshSavedList()
 
 task.spawn(function()
     while true do
-        task.wait(5)
+        task.wait(1)
         pcall(updatePlayerCounts)
     end
 end)
