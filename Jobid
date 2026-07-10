@@ -600,7 +600,7 @@ end)
 saveBtn.MouseButton1Click:Connect(function()
     local label = labelBox.Text
     local jobId = jobBox.Text
-    if label ~= "" and jobId ~= "" then
+    if label ~= "" and jobId ~= "" and #_G.SavedJobIds < 1000 then
         table.insert(_G.SavedJobIds, {
             label = label,
             jobId = jobId,
