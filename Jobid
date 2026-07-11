@@ -83,10 +83,10 @@ tabBar.BackgroundTransparency = 0.3
 tabBar.BorderSizePixel = 0
 Instance.new("UICorner", tabBar).CornerRadius = UDim.new(0, 12)
 
+local isAnimalHospitalGame = game.PlaceId == 104522435597696
+
 local tabMain = Instance.new("TextButton", tabBar)
 tabMain.Text = "📋 Job IDs"
-tabMain.Size = UDim2.new(0.333, -1, 1, 0)
-tabMain.Position = UDim2.new(0, 0, 0, 0)
 tabMain.BackgroundColor3 = Color3.fromRGB(160, 160, 160)
 tabMain.TextColor3 = Color3.fromRGB(20, 20, 20)
 tabMain.Font = Enum.Font.GothamBold
@@ -96,8 +96,6 @@ Instance.new("UICorner", tabMain).CornerRadius = UDim.new(0, 8)
 
 local tabServers = Instance.new("TextButton", tabBar)
 tabServers.Text = "🔍 Find Server"
-tabServers.Size = UDim2.new(0.333, -1, 1, 0)
-tabServers.Position = UDim2.new(0.333, 1, 0, 0)
 tabServers.BackgroundColor3 = Color3.fromRGB(210, 210, 210)
 tabServers.TextColor3 = Color3.fromRGB(80, 80, 80)
 tabServers.Font = Enum.Font.GothamBold
@@ -107,8 +105,6 @@ Instance.new("UICorner", tabServers).CornerRadius = UDim.new(0, 8)
 
 local tabAnimal = Instance.new("TextButton", tabBar)
 tabAnimal.Text = "🏥 Animal Hosp"
-tabAnimal.Size = UDim2.new(0.333, -1, 1, 0)
-tabAnimal.Position = UDim2.new(0.666, 2, 0, 0)
 tabAnimal.BackgroundColor3 = Color3.fromRGB(210, 210, 210)
 tabAnimal.TextColor3 = Color3.fromRGB(80, 80, 80)
 tabAnimal.Font = Enum.Font.GothamBold
@@ -116,7 +112,19 @@ tabAnimal.TextSize = 11
 tabAnimal.BorderSizePixel = 0
 Instance.new("UICorner", tabAnimal).CornerRadius = UDim.new(0, 8)
 
-if game.PlaceId ~= 104522435597696 then
+if isAnimalHospitalGame then
+    tabMain.Size = UDim2.new(0.333, -1, 1, 0)
+    tabMain.Position = UDim2.new(0, 0, 0, 0)
+    tabServers.Size = UDim2.new(0.333, -1, 1, 0)
+    tabServers.Position = UDim2.new(0.333, 1, 0, 0)
+    tabAnimal.Size = UDim2.new(0.333, -1, 1, 0)
+    tabAnimal.Position = UDim2.new(0.666, 2, 0, 0)
+    tabAnimal.Visible = true
+else
+    tabMain.Size = UDim2.new(0.5, -2, 1, 0)
+    tabMain.Position = UDim2.new(0, 2, 0, 0)
+    tabServers.Size = UDim2.new(0.5, -2, 1, 0)
+    tabServers.Position = UDim2.new(0.5, 0, 0, 0)
     tabAnimal.Visible = false
 end
 
@@ -768,7 +776,7 @@ refreshSavedList()
 task.spawn(function()
     while true do
         pcall(updatePlayerCounts)
-        task.wait()
+        task.wait(2)
     end
 end)
 
