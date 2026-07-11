@@ -85,25 +85,36 @@ Instance.new("UICorner", tabBar).CornerRadius = UDim.new(0, 12)
 
 local tabMain = Instance.new("TextButton", tabBar)
 tabMain.Text = "📋 Job IDs"
-tabMain.Size = UDim2.new(0.5, -2, 1, 0)
-tabMain.Position = UDim2.new(0, 2, 0, 0)
+tabMain.Size = UDim2.new(0.333, -1, 1, 0)
+tabMain.Position = UDim2.new(0, 0, 0, 0)
 tabMain.BackgroundColor3 = Color3.fromRGB(160, 160, 160)
 tabMain.TextColor3 = Color3.fromRGB(20, 20, 20)
 tabMain.Font = Enum.Font.GothamBold
-tabMain.TextSize = 12
+tabMain.TextSize = 11
 tabMain.BorderSizePixel = 0
 Instance.new("UICorner", tabMain).CornerRadius = UDim.new(0, 8)
 
 local tabServers = Instance.new("TextButton", tabBar)
 tabServers.Text = "🔍 Find Server"
-tabServers.Size = UDim2.new(0.5, -2, 1, 0)
-tabServers.Position = UDim2.new(0.5, 0, 0, 0)
+tabServers.Size = UDim2.new(0.333, -1, 1, 0)
+tabServers.Position = UDim2.new(0.333, 1, 0, 0)
 tabServers.BackgroundColor3 = Color3.fromRGB(210, 210, 210)
 tabServers.TextColor3 = Color3.fromRGB(80, 80, 80)
 tabServers.Font = Enum.Font.GothamBold
-tabServers.TextSize = 12
+tabServers.TextSize = 11
 tabServers.BorderSizePixel = 0
 Instance.new("UICorner", tabServers).CornerRadius = UDim.new(0, 8)
+
+local tabAnimal = Instance.new("TextButton", tabBar)
+tabAnimal.Text = "🏥 Animal Hosp"
+tabAnimal.Size = UDim2.new(0.333, -1, 1, 0)
+tabAnimal.Position = UDim2.new(0.666, 2, 0, 0)
+tabAnimal.BackgroundColor3 = Color3.fromRGB(210, 210, 210)
+tabAnimal.TextColor3 = Color3.fromRGB(80, 80, 80)
+tabAnimal.Font = Enum.Font.GothamBold
+tabAnimal.TextSize = 11
+tabAnimal.BorderSizePixel = 0
+Instance.new("UICorner", tabAnimal).CornerRadius = UDim.new(0, 8)
 
 local page1 = Instance.new("Frame", mainFrame)
 page1.Size = UDim2.new(1, 0, 1, -34)
@@ -465,6 +476,62 @@ page2.BackgroundTransparency = 1
 page2.BorderSizePixel = 0
 page2.Visible = false
 
+local page3 = Instance.new("Frame", mainFrame)
+page3.Size = UDim2.new(1, 0, 1, -34)
+page3.Position = UDim2.new(0, 0, 0, 34)
+page3.BackgroundTransparency = 1
+page3.BorderSizePixel = 0
+page3.Visible = false
+
+local animalTitle = Instance.new("TextLabel", page3)
+animalTitle.Text = "Animal Hospital Server Hopper"
+animalTitle.Size = UDim2.new(1, -20, 0, 30)
+animalTitle.Position = UDim2.new(0, 10, 0, 10)
+animalTitle.BackgroundTransparency = 1
+animalTitle.TextColor3 = Color3.fromRGB(30, 30, 30)
+animalTitle.Font = Enum.Font.GothamBold
+animalTitle.TextSize = 14
+animalTitle.TextXAlignment = Enum.TextXAlignment.Center
+
+local animalStackBtn = Instance.new("TextButton", page3)
+animalStackBtn.Text = "Join Stacked Server"
+animalStackBtn.Size = UDim2.new(0, 280, 0, 40)
+animalStackBtn.Position = UDim2.new(0.5, -140, 0, 60)
+animalStackBtn.BackgroundColor3 = Color3.fromRGB(100, 200, 150)
+animalStackBtn.TextColor3 = Color3.fromRGB(10, 10, 10)
+animalStackBtn.Font = Enum.Font.GothamBold
+animalStackBtn.TextSize = 14
+animalStackBtn.BorderSizePixel = 0
+Instance.new("UICorner", animalStackBtn).CornerRadius = UDim.new(0, 10)
+
+animalStackBtn.MouseButton1Click:Connect(function()
+    local currentjob = game.JobId
+    local placeid = game.PlaceId
+    
+    local apiurl = "https://games.roblox.com/v1/games/" .. placeid .. "/servers/Public?sortOrder=Desc&limit=100&excludeFullGames=true"
+    local success, result = pcall(game.HttpGet, game, apiurl)
+    
+    if success and result then
+        local body = HttpService:JSONDecode(result)
+        local targetserver = nil
+        
+        if body and body.data then
+            for _, server in ipairs(body.data) do
+                if server.id ~= currentjob then
+                    if server.playing < server.maxPlayers then
+                        targetserver = server.id
+                        break
+                    end
+                end
+            end
+        end
+        
+        if targetserver then
+            TeleportService:TeleportToPlaceInstance(placeid, targetserver, player)
+        end
+    end
+end)
+
 local fewTitle = Instance.new("TextLabel", page2)
 fewTitle.Text = "Go in the server with few players"
 fewTitle.Size = UDim2.new(1, -20, 0, 22)
@@ -595,23 +662,30 @@ mostBtn.MouseButton1Click:Connect(function()
     end)
 end)
 
-local function switchTab(page, activeBtn, inactiveBtn)
+local function switchTab(page, activeBtn, inactiveBtn1, inactiveBtn2)
     page1.Visible = false
     page2.Visible = false
+    page3.Visible = false
     page.Visible = true
     activeBtn.BackgroundColor3 = Color3.fromRGB(160, 160, 160)
     activeBtn.TextColor3 = Color3.fromRGB(20, 20, 20)
-    inactiveBtn.BackgroundColor3 = Color3.fromRGB(210, 210, 210)
-    inactiveBtn.TextColor3 = Color3.fromRGB(80, 80, 80)
+    inactiveBtn1.BackgroundColor3 = Color3.fromRGB(210, 210, 210)
+    inactiveBtn1.TextColor3 = Color3.fromRGB(80, 80, 80)
+    inactiveBtn2.BackgroundColor3 = Color3.fromRGB(210, 210, 210)
+    inactiveBtn2.TextColor3 = Color3.fromRGB(80, 80, 80)
 end
 
 tabMain.MouseButton1Click:Connect(function()
-    switchTab(page1, tabMain, tabServers)
+    switchTab(page1, tabMain, tabServers, tabAnimal)
 end)
 
 tabServers.MouseButton1Click:Connect(function()
-    switchTab(page2, tabServers, tabMain)
+    switchTab(page2, tabServers, tabMain, tabAnimal)
     statusLabel.Text = ""
+end)
+
+tabAnimal.MouseButton1Click:Connect(function()
+    switchTab(page3, tabAnimal, tabMain, tabServers)
 end)
 
 toggleButton.MouseButton1Click:Connect(function()
