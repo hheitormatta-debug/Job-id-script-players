@@ -256,6 +256,59 @@ confirmYes.MouseButton1Click:Connect(function()
     confirmOverlay.Visible = false
 end)
 
+local duplicateOverlay = Instance.new("Frame", screenGui)
+duplicateOverlay.Size = UDim2.new(1, 0, 1, 0)
+duplicateOverlay.Position = UDim2.new(0, 0, 0, 0)
+duplicateOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+duplicateOverlay.BackgroundTransparency = 0.5
+duplicateOverlay.BorderSizePixel = 0
+duplicateOverlay.ZIndex = 50
+duplicateOverlay.Visible = false
+duplicateOverlay.Active = true
+
+local duplicateBlocker = Instance.new("TextButton", duplicateOverlay)
+duplicateBlocker.Size = UDim2.new(1, 0, 1, 0)
+duplicateBlocker.BackgroundTransparency = 1
+duplicateBlocker.Text = ""
+duplicateBlocker.ZIndex = 50
+
+local duplicateBox = Instance.new("Frame", duplicateOverlay)
+duplicateBox.Size = UDim2.new(0, 240, 0, 120)
+duplicateBox.AnchorPoint = Vector2.new(0.5, 0.5)
+duplicateBox.Position = UDim2.new(0.5, 0, 0.5, 0)
+duplicateBox.BackgroundColor3 = Color3.fromRGB(210, 210, 210)
+duplicateBox.BorderSizePixel = 0
+duplicateBox.ZIndex = 51
+Instance.new("UICorner", duplicateBox).CornerRadius = UDim.new(0, 12)
+
+local duplicateTitle = Instance.new("TextLabel", duplicateBox)
+duplicateTitle.Text = "Already have that Job id there!"
+duplicateTitle.Size = UDim2.new(1, -20, 0, 50)
+duplicateTitle.Position = UDim2.new(0, 10, 0, 14)
+duplicateTitle.BackgroundTransparency = 1
+duplicateTitle.TextColor3 = Color3.fromRGB(20, 20, 20)
+duplicateTitle.Font = Enum.Font.GothamBold
+duplicateTitle.TextSize = 14
+duplicateTitle.TextWrapped = true
+duplicateTitle.TextXAlignment = Enum.TextXAlignment.Center
+duplicateTitle.ZIndex = 52
+
+local duplicateOk = Instance.new("TextButton", duplicateBox)
+duplicateOk.Text = "Ok"
+duplicateOk.Size = UDim2.new(0, 100, 0, 34)
+duplicateOk.AnchorPoint = Vector2.new(0.5, 0)
+duplicateOk.Position = UDim2.new(0.5, 0, 1, -48)
+duplicateOk.BackgroundColor3 = Color3.fromRGB(180, 200, 255)
+duplicateOk.TextColor3 = Color3.fromRGB(20, 20, 20)
+duplicateOk.Font = Enum.Font.GothamBold
+duplicateOk.TextSize = 13
+duplicateOk.ZIndex = 52
+Instance.new("UICorner", duplicateOk).CornerRadius = UDim.new(0, 8)
+
+duplicateOk.MouseButton1Click:Connect(function()
+    duplicateOverlay.Visible = false
+end)
+
 local function fetchAllServers()
     local servers = {}
     local cursor = ""
@@ -299,7 +352,6 @@ updatePlayerCounts = function()
         lookup[server.id] = server
     end
 
-    local toRemove = {}
     for _, saved in ipairs(_G.SavedJobIds) do
         if saved.gameName == gameName then
             local server = lookup[saved.jobId]
@@ -310,28 +362,8 @@ updatePlayerCounts = function()
                 if label then
                     label.Text = "👥 Players: " .. server.playing .. "/" .. server.maxPlayers
                 end
-                if server.playing <= 0 then
-                    table.insert(toRemove, saved.label)
-                end
-            else
-                table.insert(toRemove, saved.label)
             end
         end
-    end
-
-    if #toRemove > 0 then
-        for _, labelToRemove in ipairs(toRemove) do
-            for i = #_G.SavedJobIds, 1, -1 do
-                if _G.SavedJobIds[i].label == labelToRemove then
-                    table.remove(_G.SavedJobIds, i)
-                    break
-                end
-            end
-        end
-        saveToFile()
-        isUpdatingPlayerCounts = false
-        refreshSavedList()
-        return
     end
 
     isUpdatingPlayerCounts = false
@@ -600,16 +632,28 @@ end)
 saveBtn.MouseButton1Click:Connect(function()
     local label = labelBox.Text
     local jobId = jobBox.Text
-    if label ~= "" and jobId ~= "" and #_G.SavedJobIds < 1000 then
-        table.insert(_G.SavedJobIds, {
-            label = label,
-            jobId = jobId,
-            gameName = gameName
-        })
-        saveToFile()
-        refreshSavedList()
-        labelBox.Text = ""
-        jobBox.Text = ""
+    if label ~= "" and jobId ~= "" then
+        local alreadyExists = false
+        for _, saved in ipairs(_G.SavedJobIds) do
+            if saved.jobId == jobId then
+                alreadyExists = true
+                break
+            end
+        end
+
+        if alreadyExists then
+            duplicateOverlay.Visible = true
+        elseif #_G.SavedJobIds < 1000 then
+            table.insert(_G.SavedJobIds, {
+                label = label,
+                jobId = jobId,
+                gameName = gameName
+            })
+            saveToFile()
+            refreshSavedList()
+            labelBox.Text = ""
+            jobBox.Text = ""
+        end
     end
 end)
 
@@ -617,8 +661,8 @@ refreshSavedList()
 
 task.spawn(function()
     while true do
-        task.wait(1)
         pcall(updatePlayerCounts)
+        task.wait()
     end
 end)
 
