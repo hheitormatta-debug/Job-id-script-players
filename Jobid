@@ -116,6 +116,14 @@ tabAnimal.TextSize = 11
 tabAnimal.BorderSizePixel = 0
 Instance.new("UICorner", tabAnimal).CornerRadius = UDim.new(0, 8)
 
+if game.PlaceId ~= 104522435597696 then
+    tabAnimal.Visible = false
+end
+
+if game.PlaceId ~= 104522435597696 then
+    tabAnimal.Visible = false
+end
+
 local page1 = Instance.new("Frame", mainFrame)
 page1.Size = UDim2.new(1, 0, 1, -34)
 page1.Position = UDim2.new(0, 0, 0, 34)
@@ -325,24 +333,27 @@ local function fetchAllServers()
     local cursor = ""
     local pages = 0
     local anySuccess = false
-    repeat
-        local url = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
-        if cursor ~= "" then
-            url = url .. "&cursor=" .. HttpService:UrlEncode(cursor)
-        end
-        local success, result = pcall(function()
-            return HttpService:JSONDecode(game:HttpGet(url))
-        end)
-        if not success or not result or not result.data then
-            break
-        end
-        anySuccess = true
-        for _, server in ipairs(result.data) do
-            table.insert(servers, server)
-        end
-        cursor = result.nextPageCursor
-        pages = pages + 1
-    until not cursor or cursor == "" or pages >= 10
+    pcall(function()
+        repeat
+            local url = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
+            if cursor ~= "" then
+                url = url .. "&cursor=" .. HttpService:UrlEncode(cursor)
+            end
+            local success, result = pcall(function()
+                return HttpService:JSONDecode(game:HttpGet(url))
+            end)
+            if success and result and result.data then
+                anySuccess = true
+                for _, server in ipairs(result.data) do
+                    table.insert(servers, server)
+                end
+                cursor = result.nextPageCursor or ""
+                pages = pages + 1
+            else
+                cursor = ""
+            end
+        until cursor == "" or pages >= 10
+    end)
     return servers, anySuccess
 end
 
@@ -390,6 +401,12 @@ refreshSavedList = function()
             item.Size = UDim2.new(1, 0, 0, 50)
             item.Position = UDim2.new(0, 0, 0, y)
             item.BackgroundTransparency = 1
+
+            if saved.jobId == game.JobId then
+                local stroke = Instance.new("UIStroke", item)
+                stroke.Color = Color3.fromRGB(100, 200, 100)
+                stroke.Thickness = 2
+            end
 
             local lbl = Instance.new("TextLabel", item)
             lbl.Text = "🏷 " .. saved.label
@@ -493,10 +510,25 @@ animalTitle.Font = Enum.Font.GothamBold
 animalTitle.TextSize = 14
 animalTitle.TextXAlignment = Enum.TextXAlignment.Center
 
+local animalShiftLabel = Instance.new("TextLabel", page3)
+animalShiftLabel.Text = "Shift: " .. tostring(Players:GetAttribute("Night") or "...")
+animalShiftLabel.Size = UDim2.new(1, -20, 0, 24)
+animalShiftLabel.Position = UDim2.new(0, 10, 0, 40)
+animalShiftLabel.BackgroundTransparency = 1
+animalShiftLabel.TextColor3 = Color3.fromRGB(60, 60, 60)
+animalShiftLabel.Font = Enum.Font.Gotham
+animalShiftLabel.TextSize = 12
+animalShiftLabel.TextXAlignment = Enum.TextXAlignment.Center
+
+Players:GetAttributeChangedSignal("Night"):Connect(function()
+    local new = Players:GetAttribute("Night")
+    animalShiftLabel.Text = "Shift: " .. tostring(new)
+end)
+
 local animalStackBtn = Instance.new("TextButton", page3)
 animalStackBtn.Text = "Join Stacked Server"
 animalStackBtn.Size = UDim2.new(0, 280, 0, 40)
-animalStackBtn.Position = UDim2.new(0.5, -140, 0, 60)
+animalStackBtn.Position = UDim2.new(0.5, -140, 0, 75)
 animalStackBtn.BackgroundColor3 = Color3.fromRGB(100, 200, 150)
 animalStackBtn.TextColor3 = Color3.fromRGB(10, 10, 10)
 animalStackBtn.Font = Enum.Font.GothamBold
