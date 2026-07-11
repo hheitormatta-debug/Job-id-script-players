@@ -192,22 +192,6 @@ savedList.BackgroundTransparency = 0.2
 savedList.BorderSizePixel = 0
 Instance.new("UICorner", savedList).CornerRadius = UDim.new(0, 8)
 
-local mainShiftLabel = Instance.new("TextLabel", page1)
-mainShiftLabel.Text = "Shift: " .. tostring(Players:GetAttribute("Night") or "...")
-mainShiftLabel.Size = UDim2.new(1, -20, 0, 22)
-mainShiftLabel.Position = UDim2.new(0, 10, 0, 326)
-mainShiftLabel.BackgroundTransparency = 1
-mainShiftLabel.TextColor3 = Color3.fromRGB(60, 60, 60)
-mainShiftLabel.Font = Enum.Font.GothamBold
-mainShiftLabel.TextSize = 12
-mainShiftLabel.TextXAlignment = Enum.TextXAlignment.Center
-mainShiftLabel.Visible = isAnimalHospitalGame
-
-Players:GetAttributeChangedSignal("Night"):Connect(function()
-    local new = Players:GetAttribute("Night")
-    mainShiftLabel.Text = "Shift: " .. tostring(new)
-end)
-
 local playerCountLabels = {}
 local isUpdatingPlayerCounts = false
 local refreshSavedList
@@ -421,8 +405,9 @@ refreshSavedList = function()
     local y = 0
     for index, saved in ipairs(_G.SavedJobIds) do
         if saved.gameName == gameName then
+            local itemHeight = 50
             local item = Instance.new("Frame", savedList)
-            item.Size = UDim2.new(1, 0, 0, 50)
+            item.Size = UDim2.new(1, 0, 0, itemHeight)
             item.Position = UDim2.new(0, 0, 0, y)
             item.BackgroundTransparency = 1
 
@@ -503,7 +488,7 @@ refreshSavedList = function()
                 showDeleteConfirm(saved.label)
             end)
 
-            y = y + 52
+            y = y + itemHeight + 2
         end
     end
     savedList.CanvasSize = UDim2.new(0, 0, 0, y)
@@ -549,10 +534,76 @@ Players:GetAttributeChangedSignal("Night"):Connect(function()
     animalShiftLabel.Text = "Shift: " .. tostring(new)
 end)
 
+local animalBlacklist = {}
+if isfile("linearhopperforah") then
+    local success, result = pcall(function()
+        return HttpService:JSONDecode(readfile("linearhopperforah"))
+    end)
+    if success and typeof(result) == "table" then
+        animalBlacklist = result
+    end
+end
+
+local animalBlacklistEnabled = true
+
+local blacklistLabel = Instance.new("TextLabel", page3)
+blacklistLabel.Text = "Blacklist server:"
+blacklistLabel.Size = UDim2.new(0, 180, 0, 24)
+blacklistLabel.Position = UDim2.new(0, 20, 0, 75)
+blacklistLabel.BackgroundTransparency = 1
+blacklistLabel.TextColor3 = Color3.fromRGB(30, 30, 30)
+blacklistLabel.Font = Enum.Font.Gotham
+blacklistLabel.TextSize = 12
+blacklistLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local blacklistToggleBg = Instance.new("Frame", page3)
+blacklistToggleBg.Size = UDim2.new(0, 50, 0, 24)
+blacklistToggleBg.Position = UDim2.new(0, 210, 0, 75)
+blacklistToggleBg.BackgroundColor3 = Color3.fromRGB(100, 200, 100)
+blacklistToggleBg.BorderSizePixel = 0
+Instance.new("UICorner", blacklistToggleBg).CornerRadius = UDim.new(0, 6)
+
+local blacklistToggleButton = Instance.new("TextButton", blacklistToggleBg)
+blacklistToggleButton.Size = UDim2.new(0, 22, 0, 22)
+blacklistToggleButton.Position = UDim2.new(0, 25, 0, 1)
+blacklistToggleButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+blacklistToggleButton.Text = ""
+blacklistToggleButton.BorderSizePixel = 0
+Instance.new("UICorner", blacklistToggleButton).CornerRadius = UDim.new(0, 4)
+
+blacklistToggleButton.MouseButton1Click:Connect(function()
+    animalBlacklistEnabled = not animalBlacklistEnabled
+    if animalBlacklistEnabled then
+        blacklistToggleBg.BackgroundColor3 = Color3.fromRGB(100, 200, 100)
+        blacklistToggleButton.Position = UDim2.new(0, 25, 0, 1)
+    else
+        blacklistToggleBg.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
+        blacklistToggleButton.Position = UDim2.new(0, 2, 0, 1)
+    end
+end)
+
+local clearBlacklistBtn = Instance.new("TextButton", page3)
+clearBlacklistBtn.Text = "Clear Blacklist"
+clearBlacklistBtn.Size = UDim2.new(0, 280, 0, 36)
+clearBlacklistBtn.Position = UDim2.new(0.5, -140, 0, 105)
+clearBlacklistBtn.BackgroundColor3 = Color3.fromRGB(200, 150, 150)
+clearBlacklistBtn.TextColor3 = Color3.fromRGB(30, 30, 30)
+clearBlacklistBtn.Font = Enum.Font.GothamBold
+clearBlacklistBtn.TextSize = 12
+clearBlacklistBtn.BorderSizePixel = 0
+Instance.new("UICorner", clearBlacklistBtn).CornerRadius = UDim.new(0, 10)
+
+clearBlacklistBtn.MouseButton1Click:Connect(function()
+    animalBlacklist = {}
+    pcall(function()
+        writefile("linearhopperforah", HttpService:JSONEncode({}))
+    end)
+end)
+
 local animalStackBtn = Instance.new("TextButton", page3)
 animalStackBtn.Text = "Join Stacked Server"
 animalStackBtn.Size = UDim2.new(0, 280, 0, 40)
-animalStackBtn.Position = UDim2.new(0.5, -140, 0, 75)
+animalStackBtn.Position = UDim2.new(0.5, -140, 0, 155)
 animalStackBtn.BackgroundColor3 = Color3.fromRGB(100, 200, 150)
 animalStackBtn.TextColor3 = Color3.fromRGB(10, 10, 10)
 animalStackBtn.Font = Enum.Font.GothamBold
@@ -564,6 +615,13 @@ animalStackBtn.MouseButton1Click:Connect(function()
     local currentjob = game.JobId
     local placeid = game.PlaceId
     
+    if animalBlacklistEnabled and not table.find(animalBlacklist, currentjob) then
+        table.insert(animalBlacklist, currentjob)
+        pcall(function()
+            writefile("linearhopperforah", HttpService:JSONEncode(animalBlacklist))
+        end)
+    end
+    
     local apiurl = "https://games.roblox.com/v1/games/" .. placeid .. "/servers/Public?sortOrder=Desc&limit=100&excludeFullGames=true"
     local success, result = pcall(game.HttpGet, game, apiurl)
     
@@ -574,9 +632,16 @@ animalStackBtn.MouseButton1Click:Connect(function()
         if body and body.data then
             for _, server in ipairs(body.data) do
                 if server.id ~= currentjob then
-                    if server.playing < server.maxPlayers then
-                        targetserver = server.id
-                        break
+                    if animalBlacklistEnabled then
+                        if not table.find(animalBlacklist, server.id) and server.playing < server.maxPlayers then
+                            targetserver = server.id
+                            break
+                        end
+                    else
+                        if server.playing < server.maxPlayers then
+                            targetserver = server.id
+                            break
+                        end
                     end
                 end
             end
