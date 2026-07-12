@@ -195,6 +195,21 @@ savedList.BackgroundTransparency = 0.2
 savedList.BorderSizePixel = 0
 Instance.new("UICorner", savedList).CornerRadius = UDim.new(0, 8)
 
+local function buildPlayersText(saved)
+    local text
+    if trimJobId(saved.jobId) == game.JobId then
+        text = "👥 Players: " .. #Players:GetPlayers() .. "/" .. Players.MaxPlayers
+    elseif saved.playing and saved.maxPlayers then
+        text = "👥 Players: " .. saved.playing .. "/" .. saved.maxPlayers
+    else
+        text = "👥 Players: 0/" .. Players.MaxPlayers
+    end
+    if isAnimalHospitalGame and saved.shift ~= nil then
+        text = text .. "  Shift:" .. tostring(saved.shift)
+    end
+    return text
+end
+
 local playerCountLabels = {}
 local isUpdatingPlayerCounts = false
 local refreshSavedList
@@ -339,6 +354,112 @@ duplicateOk.MouseButton1Click:Connect(function()
     duplicateOverlay.Visible = false
 end)
 
+local nameDuplicateOverlay = Instance.new("Frame", screenGui)
+nameDuplicateOverlay.Size = UDim2.new(1, 0, 1, 0)
+nameDuplicateOverlay.Position = UDim2.new(0, 0, 0, 0)
+nameDuplicateOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+nameDuplicateOverlay.BackgroundTransparency = 0.5
+nameDuplicateOverlay.BorderSizePixel = 0
+nameDuplicateOverlay.ZIndex = 50
+nameDuplicateOverlay.Visible = false
+nameDuplicateOverlay.Active = true
+
+local nameDuplicateBlocker = Instance.new("TextButton", nameDuplicateOverlay)
+nameDuplicateBlocker.Size = UDim2.new(1, 0, 1, 0)
+nameDuplicateBlocker.BackgroundTransparency = 1
+nameDuplicateBlocker.Text = ""
+nameDuplicateBlocker.ZIndex = 50
+
+local nameDuplicateBox = Instance.new("Frame", nameDuplicateOverlay)
+nameDuplicateBox.Size = UDim2.new(0, 240, 0, 120)
+nameDuplicateBox.AnchorPoint = Vector2.new(0.5, 0.5)
+nameDuplicateBox.Position = UDim2.new(0.5, 0, 0.5, 0)
+nameDuplicateBox.BackgroundColor3 = Color3.fromRGB(210, 210, 210)
+nameDuplicateBox.BorderSizePixel = 0
+nameDuplicateBox.ZIndex = 51
+Instance.new("UICorner", nameDuplicateBox).CornerRadius = UDim.new(0, 12)
+
+local nameDuplicateTitle = Instance.new("TextLabel", nameDuplicateBox)
+nameDuplicateTitle.Text = "It already has that name! Use another one."
+nameDuplicateTitle.Size = UDim2.new(1, -20, 0, 50)
+nameDuplicateTitle.Position = UDim2.new(0, 10, 0, 14)
+nameDuplicateTitle.BackgroundTransparency = 1
+nameDuplicateTitle.TextColor3 = Color3.fromRGB(20, 20, 20)
+nameDuplicateTitle.Font = Enum.Font.GothamBold
+nameDuplicateTitle.TextSize = 14
+nameDuplicateTitle.TextWrapped = true
+nameDuplicateTitle.TextXAlignment = Enum.TextXAlignment.Center
+nameDuplicateTitle.ZIndex = 52
+
+local nameDuplicateOk = Instance.new("TextButton", nameDuplicateBox)
+nameDuplicateOk.Text = "Ok"
+nameDuplicateOk.Size = UDim2.new(0, 100, 0, 34)
+nameDuplicateOk.AnchorPoint = Vector2.new(0.5, 0)
+nameDuplicateOk.Position = UDim2.new(0.5, 0, 1, -48)
+nameDuplicateOk.BackgroundColor3 = Color3.fromRGB(180, 200, 255)
+nameDuplicateOk.TextColor3 = Color3.fromRGB(20, 20, 20)
+nameDuplicateOk.Font = Enum.Font.GothamBold
+nameDuplicateOk.TextSize = 13
+nameDuplicateOk.ZIndex = 52
+Instance.new("UICorner", nameDuplicateOk).CornerRadius = UDim.new(0, 8)
+
+nameDuplicateOk.MouseButton1Click:Connect(function()
+    nameDuplicateOverlay.Visible = false
+end)
+
+local alreadyInServerOverlay = Instance.new("Frame", screenGui)
+alreadyInServerOverlay.Size = UDim2.new(1, 0, 1, 0)
+alreadyInServerOverlay.Position = UDim2.new(0, 0, 0, 0)
+alreadyInServerOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+alreadyInServerOverlay.BackgroundTransparency = 0.5
+alreadyInServerOverlay.BorderSizePixel = 0
+alreadyInServerOverlay.ZIndex = 50
+alreadyInServerOverlay.Visible = false
+alreadyInServerOverlay.Active = true
+
+local alreadyInServerBlocker = Instance.new("TextButton", alreadyInServerOverlay)
+alreadyInServerBlocker.Size = UDim2.new(1, 0, 1, 0)
+alreadyInServerBlocker.BackgroundTransparency = 1
+alreadyInServerBlocker.Text = ""
+alreadyInServerBlocker.ZIndex = 50
+
+local alreadyInServerBox = Instance.new("Frame", alreadyInServerOverlay)
+alreadyInServerBox.Size = UDim2.new(0, 240, 0, 120)
+alreadyInServerBox.AnchorPoint = Vector2.new(0.5, 0.5)
+alreadyInServerBox.Position = UDim2.new(0.5, 0, 0.5, 0)
+alreadyInServerBox.BackgroundColor3 = Color3.fromRGB(210, 210, 210)
+alreadyInServerBox.BorderSizePixel = 0
+alreadyInServerBox.ZIndex = 51
+Instance.new("UICorner", alreadyInServerBox).CornerRadius = UDim.new(0, 12)
+
+local alreadyInServerTitle = Instance.new("TextLabel", alreadyInServerBox)
+alreadyInServerTitle.Text = "You are already in This server!"
+alreadyInServerTitle.Size = UDim2.new(1, -20, 0, 50)
+alreadyInServerTitle.Position = UDim2.new(0, 10, 0, 14)
+alreadyInServerTitle.BackgroundTransparency = 1
+alreadyInServerTitle.TextColor3 = Color3.fromRGB(20, 20, 20)
+alreadyInServerTitle.Font = Enum.Font.GothamBold
+alreadyInServerTitle.TextSize = 14
+alreadyInServerTitle.TextWrapped = true
+alreadyInServerTitle.TextXAlignment = Enum.TextXAlignment.Center
+alreadyInServerTitle.ZIndex = 52
+
+local alreadyInServerOk = Instance.new("TextButton", alreadyInServerBox)
+alreadyInServerOk.Text = "Ok"
+alreadyInServerOk.Size = UDim2.new(0, 100, 0, 34)
+alreadyInServerOk.AnchorPoint = Vector2.new(0.5, 0)
+alreadyInServerOk.Position = UDim2.new(0.5, 0, 1, -48)
+alreadyInServerOk.BackgroundColor3 = Color3.fromRGB(180, 200, 255)
+alreadyInServerOk.TextColor3 = Color3.fromRGB(20, 20, 20)
+alreadyInServerOk.Font = Enum.Font.GothamBold
+alreadyInServerOk.TextSize = 13
+alreadyInServerOk.ZIndex = 52
+Instance.new("UICorner", alreadyInServerOk).CornerRadius = UDim.new(0, 8)
+
+alreadyInServerOk.MouseButton1Click:Connect(function()
+    alreadyInServerOverlay.Visible = false
+end)
+
 local function fetchAllServers()
     local servers = {}
     local cursor = ""
@@ -391,27 +512,24 @@ updatePlayerCounts = function()
             local trimmedJobId = trimJobId(saved.jobId)
 
             if trimmedJobId == game.JobId then
-                local livePlaying = #Players:GetPlayers()
-                saved.playing = livePlaying
+                saved.playing = #Players:GetPlayers()
                 saved.maxPlayers = Players.MaxPlayers
-                if label then
-                    label.Text = "👥 Players: " .. livePlaying .. "/" .. Players.MaxPlayers
+                if isAnimalHospitalGame then
+                    saved.shift = Players:GetAttribute("Night")
                 end
             else
                 local server = lookup[trimmedJobId]
                 if server and server.playing > 0 then
                     saved.playing = server.playing
                     saved.maxPlayers = server.maxPlayers
-                    if label then
-                        label.Text = "👥 Players: " .. server.playing .. "/" .. server.maxPlayers
-                    end
                 else
                     saved.playing = 0
                     saved.maxPlayers = Players.MaxPlayers
-                    if label then
-                        label.Text = "👥 Players: 0/" .. Players.MaxPlayers
-                    end
                 end
+            end
+
+            if label then
+                label.Text = buildPlayersText(saved)
             end
         end
     end
@@ -431,7 +549,7 @@ refreshSavedList = function()
             item.Position = UDim2.new(0, 0, 0, y)
             item.BackgroundTransparency = 1
 
-            if saved.jobId == game.JobId then
+            if trimJobId(saved.jobId) == game.JobId then
                 local stroke = Instance.new("UIStroke", item)
                 stroke.Color = Color3.fromRGB(100, 200, 100)
                 stroke.Thickness = 2
@@ -460,13 +578,7 @@ refreshSavedList = function()
             gameLbl.TextTruncate = Enum.TextTruncate.AtEnd
 
             local playersLbl = Instance.new("TextLabel", item)
-            if trimJobId(saved.jobId) == game.JobId then
-                playersLbl.Text = "👥 Players: " .. #Players:GetPlayers() .. "/" .. Players.MaxPlayers
-            elseif saved.playing and saved.maxPlayers then
-                playersLbl.Text = "👥 Players: " .. saved.playing .. "/" .. saved.maxPlayers
-            else
-                playersLbl.Text = "👥 Players: 0/" .. Players.MaxPlayers
-            end
+            playersLbl.Text = buildPlayersText(saved)
             playersLbl.Size = UDim2.new(1, -100, 0, 12)
             playersLbl.Position = UDim2.new(0, 6, 0, 30)
             playersLbl.BackgroundTransparency = 1
@@ -485,7 +597,7 @@ refreshSavedList = function()
             copy.TextSize = 11
             Instance.new("UICorner", copy).CornerRadius = UDim.new(0, 4)
             copy.MouseButton1Click:Connect(function()
-                if setclipboard then setclipboard(saved.jobId) end
+                if setclipboard then setclipboard(trimJobId(saved.jobId)) end
             end)
 
             local join = Instance.new("TextButton", item)
@@ -496,7 +608,11 @@ refreshSavedList = function()
             join.TextSize = 11
             Instance.new("UICorner", join).CornerRadius = UDim.new(0, 4)
             join.MouseButton1Click:Connect(function()
-                TeleportService:TeleportToPlaceInstance(game.PlaceId, trimJobId(saved.jobId), player)
+                if trimJobId(saved.jobId) == game.JobId then
+                    alreadyInServerOverlay.Visible = true
+                else
+                    TeleportService:TeleportToPlaceInstance(game.PlaceId, trimJobId(saved.jobId), player)
+                end
             end)
 
             local delete = Instance.new("TextButton", item)
@@ -516,6 +632,24 @@ refreshSavedList = function()
     savedList.CanvasSize = UDim2.new(0, 0, 0, y)
     task.spawn(updatePlayerCounts)
 end
+
+local function syncCurrentShiftDisplay()
+    if not isAnimalHospitalGame then
+        return
+    end
+    local shift = Players:GetAttribute("Night")
+    for _, saved in ipairs(_G.SavedJobIds) do
+        if saved.gameName == gameName and trimJobId(saved.jobId) == game.JobId then
+            saved.shift = shift
+            local label = playerCountLabels[saved.label]
+            if label then
+                label.Text = buildPlayersText(saved)
+            end
+        end
+    end
+end
+
+Players:GetAttributeChangedSignal("Night"):Connect(syncCurrentShiftDisplay)
 
 local page2 = Instance.new("Frame", mainFrame)
 page2.Size = UDim2.new(1, 0, 1, -34)
@@ -842,24 +976,33 @@ end)
 joinBtn.MouseButton1Click:Connect(function()
     local jobId = trimJobId(jobBox.Text)
     if jobId and jobId ~= "" then
-        TeleportService:TeleportToPlaceInstance(game.PlaceId, jobId, player)
+        if jobId == game.JobId then
+            alreadyInServerOverlay.Visible = true
+        else
+            TeleportService:TeleportToPlaceInstance(game.PlaceId, jobId, player)
+        end
     end
 end)
 
 saveBtn.MouseButton1Click:Connect(function()
-    local label = labelBox.Text
+    local label = trimJobId(labelBox.Text)
     local jobId = trimJobId(jobBox.Text)
     if label ~= "" and jobId ~= "" then
-        local alreadyExists = false
+        local jobIdExists = false
+        local nameExists = false
         for _, saved in ipairs(_G.SavedJobIds) do
             if trimJobId(saved.jobId) == jobId then
-                alreadyExists = true
-                break
+                jobIdExists = true
+            end
+            if saved.label == label then
+                nameExists = true
             end
         end
 
-        if alreadyExists then
+        if jobIdExists then
             duplicateOverlay.Visible = true
+        elseif nameExists then
+            nameDuplicateOverlay.Visible = true
         elseif #_G.SavedJobIds < 1000 then
             table.insert(_G.SavedJobIds, {
                 label = label,
