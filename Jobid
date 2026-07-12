@@ -385,12 +385,18 @@ updatePlayerCounts = function()
     for _, saved in ipairs(_G.SavedJobIds) do
         if saved.gameName == gameName then
             local server = lookup[saved.jobId]
-            if server then
+            local label = playerCountLabels[saved.label]
+            if server and server.playing > 0 then
                 saved.playing = server.playing
                 saved.maxPlayers = server.maxPlayers
-                local label = playerCountLabels[saved.label]
                 if label then
                     label.Text = "👥 Players: " .. server.playing .. "/" .. server.maxPlayers
+                end
+            else
+                saved.playing = 0
+                saved.maxPlayers = Players.MaxPlayers
+                if label then
+                    label.Text = "👥 Players: 0/" .. Players.MaxPlayers
                 end
             end
         end
@@ -857,7 +863,7 @@ refreshSavedList()
 task.spawn(function()
     while true do
         pcall(updatePlayerCounts)
-        task.wait(2)
+        task.wait(1)
     end
 end)
 
