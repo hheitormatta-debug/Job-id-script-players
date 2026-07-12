@@ -387,19 +387,30 @@ updatePlayerCounts = function()
 
     for _, saved in ipairs(_G.SavedJobIds) do
         if saved.gameName == gameName then
-            local server = lookup[trimJobId(saved.jobId)]
             local label = playerCountLabels[saved.label]
-            if server and server.playing > 0 then
-                saved.playing = server.playing
-                saved.maxPlayers = server.maxPlayers
-                if label then
-                    label.Text = "👥 Players: " .. server.playing .. "/" .. server.maxPlayers
-                end
-            else
-                saved.playing = 0
+            local trimmedJobId = trimJobId(saved.jobId)
+
+            if trimmedJobId == game.JobId then
+                local livePlaying = #Players:GetPlayers()
+                saved.playing = livePlaying
                 saved.maxPlayers = Players.MaxPlayers
                 if label then
-                    label.Text = "👥 Players: 0/" .. Players.MaxPlayers
+                    label.Text = "👥 Players: " .. livePlaying .. "/" .. Players.MaxPlayers
+                end
+            else
+                local server = lookup[trimmedJobId]
+                if server and server.playing > 0 then
+                    saved.playing = server.playing
+                    saved.maxPlayers = server.maxPlayers
+                    if label then
+                        label.Text = "👥 Players: " .. server.playing .. "/" .. server.maxPlayers
+                    end
+                else
+                    saved.playing = 0
+                    saved.maxPlayers = Players.MaxPlayers
+                    if label then
+                        label.Text = "👥 Players: 0/" .. Players.MaxPlayers
+                    end
                 end
             end
         end
@@ -449,7 +460,9 @@ refreshSavedList = function()
             gameLbl.TextTruncate = Enum.TextTruncate.AtEnd
 
             local playersLbl = Instance.new("TextLabel", item)
-            if saved.playing and saved.maxPlayers then
+            if trimJobId(saved.jobId) == game.JobId then
+                playersLbl.Text = "👥 Players: " .. #Players:GetPlayers() .. "/" .. Players.MaxPlayers
+            elseif saved.playing and saved.maxPlayers then
                 playersLbl.Text = "👥 Players: " .. saved.playing .. "/" .. saved.maxPlayers
             else
                 playersLbl.Text = "👥 Players: 0/" .. Players.MaxPlayers
