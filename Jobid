@@ -3,6 +3,13 @@ local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 local player = Players.LocalPlayer
 
+local function trimJobId(str)
+    if not str then
+        return str
+    end
+    return (str:gsub("^%s+", ""):gsub("%s+$", ""))
+end
+
 _G.SavedJobIds = {}
 
 local jobIdFolder = "Job id"
@@ -125,10 +132,6 @@ else
     tabMain.Position = UDim2.new(0, 2, 0, 0)
     tabServers.Size = UDim2.new(0.5, -2, 1, 0)
     tabServers.Position = UDim2.new(0.5, 0, 0, 0)
-    tabAnimal.Visible = false
-end
-
-if game.PlaceId ~= 104522435597696 then
     tabAnimal.Visible = false
 end
 
@@ -384,7 +387,7 @@ updatePlayerCounts = function()
 
     for _, saved in ipairs(_G.SavedJobIds) do
         if saved.gameName == gameName then
-            local server = lookup[saved.jobId]
+            local server = lookup[trimJobId(saved.jobId)]
             local label = playerCountLabels[saved.label]
             if server and server.playing > 0 then
                 saved.playing = server.playing
@@ -449,7 +452,7 @@ refreshSavedList = function()
             if saved.playing and saved.maxPlayers then
                 playersLbl.Text = "👥 Players: " .. saved.playing .. "/" .. saved.maxPlayers
             else
-                playersLbl.Text = "👥 Players: ..."
+                playersLbl.Text = "👥 Players: 0/" .. Players.MaxPlayers
             end
             playersLbl.Size = UDim2.new(1, -100, 0, 12)
             playersLbl.Position = UDim2.new(0, 6, 0, 30)
@@ -480,7 +483,7 @@ refreshSavedList = function()
             join.TextSize = 11
             Instance.new("UICorner", join).CornerRadius = UDim.new(0, 4)
             join.MouseButton1Click:Connect(function()
-                TeleportService:TeleportToPlaceInstance(game.PlaceId, saved.jobId, player)
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, trimJobId(saved.jobId), player)
             end)
 
             local delete = Instance.new("TextButton", item)
@@ -824,7 +827,7 @@ copyBtn.MouseButton1Click:Connect(function()
 end)
 
 joinBtn.MouseButton1Click:Connect(function()
-    local jobId = jobBox.Text
+    local jobId = trimJobId(jobBox.Text)
     if jobId and jobId ~= "" then
         TeleportService:TeleportToPlaceInstance(game.PlaceId, jobId, player)
     end
@@ -832,11 +835,11 @@ end)
 
 saveBtn.MouseButton1Click:Connect(function()
     local label = labelBox.Text
-    local jobId = jobBox.Text
+    local jobId = trimJobId(jobBox.Text)
     if label ~= "" and jobId ~= "" then
         local alreadyExists = false
         for _, saved in ipairs(_G.SavedJobIds) do
-            if saved.jobId == jobId then
+            if trimJobId(saved.jobId) == jobId then
                 alreadyExists = true
                 break
             end
