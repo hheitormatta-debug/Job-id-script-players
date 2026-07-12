@@ -196,21 +196,24 @@ savedList.BorderSizePixel = 0
 Instance.new("UICorner", savedList).CornerRadius = UDim.new(0, 8)
 
 local function buildPlayersText(saved)
-    local text
     if trimJobId(saved.jobId) == game.JobId then
-        text = "👥 Players: " .. #Players:GetPlayers() .. "/" .. Players.MaxPlayers
+        return "👥 Players: " .. #Players:GetPlayers() .. "/" .. Players.MaxPlayers
     elseif saved.playing and saved.maxPlayers then
-        text = "👥 Players: " .. saved.playing .. "/" .. saved.maxPlayers
+        return "👥 Players: " .. saved.playing .. "/" .. saved.maxPlayers
     else
-        text = "👥 Players: 0/" .. Players.MaxPlayers
+        return "👥 Players: 0/" .. Players.MaxPlayers
     end
-    if isAnimalHospitalGame and saved.shift ~= nil then
-        text = text .. "  Shift:" .. tostring(saved.shift)
+end
+
+local function buildShiftText(saved)
+    if saved.shift ~= nil then
+        return "Shift:" .. tostring(saved.shift)
     end
-    return text
+    return ""
 end
 
 local playerCountLabels = {}
+local shiftLabels = {}
 local isUpdatingPlayerCounts = false
 local refreshSavedList
 local updatePlayerCounts
@@ -506,9 +509,12 @@ updatePlayerCounts = function()
         lookup[server.id] = server
     end
 
+    local toRemove = {}
+
     for _, saved in ipairs(_G.SavedJobIds) do
         if saved.gameName == gameName then
             local label = playerCountLabels[saved.label]
+            local shiftLabel = shiftLabels[saved.label]
             local trimmedJobId = trimJobId(saved.jobId)
 
             if trimmedJobId == game.JobId then
@@ -519,9 +525,12 @@ updatePlayerCounts = function()
                 end
             else
                 local server = lookup[trimmedJobId]
-                if server and server.playing > 0 then
+                if server then
                     saved.playing = server.playing
                     saved.maxPlayers = server.maxPlayers
+                    if server.playing <= 0 then
+                        table.insert(toRemove, saved.label)
+                    end
                 else
                     saved.playing = 0
                     saved.maxPlayers = Players.MaxPlayers
@@ -531,7 +540,25 @@ updatePlayerCounts = function()
             if label then
                 label.Text = buildPlayersText(saved)
             end
+            if shiftLabel then
+                shiftLabel.Text = buildShiftText(saved)
+            end
         end
+    end
+
+    if #toRemove > 0 then
+        for _, labelToRemove in ipairs(toRemove) do
+            for i = #_G.SavedJobIds, 1, -1 do
+                if _G.SavedJobIds[i].label == labelToRemove then
+                    table.remove(_G.SavedJobIds, i)
+                    break
+                end
+            end
+        end
+        saveToFile()
+        isUpdatingPlayerCounts = false
+        refreshSavedList()
+        return
     end
 
     isUpdatingPlayerCounts = false
@@ -540,10 +567,11 @@ end
 refreshSavedList = function()
     savedList:ClearAllChildren()
     playerCountLabels = {}
+    shiftLabels = {}
     local y = 0
     for index, saved in ipairs(_G.SavedJobIds) do
         if saved.gameName == gameName then
-            local itemHeight = 50
+            local itemHeight = isAnimalHospitalGame and 66 or 50
             local item = Instance.new("Frame", savedList)
             item.Size = UDim2.new(1, 0, 0, itemHeight)
             item.Position = UDim2.new(0, 0, 0, y)
@@ -588,6 +616,19 @@ refreshSavedList = function()
             playersLbl.TextXAlignment = Enum.TextXAlignment.Left
 
             playerCountLabels[saved.label] = playersLbl
+
+            if isAnimalHospitalGame then
+                local shiftLbl = Instance.new("TextLabel", item)
+                shiftLbl.Text = buildShiftText(saved)
+                shiftLbl.Size = UDim2.new(1, -12, 0, 20)
+                shiftLbl.Position = UDim2.new(0, 6, 0, 44)
+                shiftLbl.BackgroundTransparency = 1
+                shiftLbl.TextColor3 = Color3.fromRGB(30, 130, 80)
+                shiftLbl.Font = Enum.Font.GothamBold
+                shiftLbl.TextSize = 16
+                shiftLbl.TextXAlignment = Enum.TextXAlignment.Left
+                shiftLabels[saved.label] = shiftLbl
+            end
 
             local copy = Instance.new("TextButton", item)
             copy.Text = "Copy"
@@ -644,6 +685,10 @@ local function syncCurrentShiftDisplay()
             local label = playerCountLabels[saved.label]
             if label then
                 label.Text = buildPlayersText(saved)
+            end
+            local shiftLabel = shiftLabels[saved.label]
+            if shiftLabel then
+                shiftLabel.Text = buildShiftText(saved)
             end
         end
     end
