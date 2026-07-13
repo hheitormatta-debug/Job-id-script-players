@@ -195,6 +195,22 @@ savedList.BackgroundTransparency = 0.2
 savedList.BorderSizePixel = 0
 Instance.new("UICorner", savedList).CornerRadius = UDim.new(0, 8)
 
+local mainShiftLabel = Instance.new("TextLabel", page1)
+mainShiftLabel.Text = "Shift: " .. tostring(Players:GetAttribute("Night") or "...")
+mainShiftLabel.Size = UDim2.new(1, -20, 0, 22)
+mainShiftLabel.Position = UDim2.new(0, 10, 0, 326)
+mainShiftLabel.BackgroundTransparency = 1
+mainShiftLabel.TextColor3 = Color3.fromRGB(60, 60, 60)
+mainShiftLabel.Font = Enum.Font.GothamBold
+mainShiftLabel.TextSize = 12
+mainShiftLabel.TextXAlignment = Enum.TextXAlignment.Center
+mainShiftLabel.Visible = isAnimalHospitalGame
+
+Players:GetAttributeChangedSignal("Night"):Connect(function()
+    local new = Players:GetAttribute("Night")
+    mainShiftLabel.Text = "Shift: " .. tostring(new)
+end)
+
 local function buildPlayersText(saved)
     if trimJobId(saved.jobId) == game.JobId then
         return "👥 Players: " .. #Players:GetPlayers() .. "/" .. Players.MaxPlayers
@@ -509,8 +525,6 @@ updatePlayerCounts = function()
         lookup[server.id] = server
     end
 
-    local toRemove = {}
-
     for _, saved in ipairs(_G.SavedJobIds) do
         if saved.gameName == gameName then
             local label = playerCountLabels[saved.label]
@@ -528,10 +542,7 @@ updatePlayerCounts = function()
                 if server then
                     saved.playing = server.playing
                     saved.maxPlayers = server.maxPlayers
-                    if server.playing <= 0 then
-                        table.insert(toRemove, saved.label)
-                    end
-                else
+                elseif not saved.maxPlayers then
                     saved.playing = 0
                     saved.maxPlayers = Players.MaxPlayers
                 end
@@ -544,21 +555,6 @@ updatePlayerCounts = function()
                 shiftLabel.Text = buildShiftText(saved)
             end
         end
-    end
-
-    if #toRemove > 0 then
-        for _, labelToRemove in ipairs(toRemove) do
-            for i = #_G.SavedJobIds, 1, -1 do
-                if _G.SavedJobIds[i].label == labelToRemove then
-                    table.remove(_G.SavedJobIds, i)
-                    break
-                end
-            end
-        end
-        saveToFile()
-        isUpdatingPlayerCounts = false
-        refreshSavedList()
-        return
     end
 
     isUpdatingPlayerCounts = false
