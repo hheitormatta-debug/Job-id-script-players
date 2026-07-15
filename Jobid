@@ -516,48 +516,54 @@ updatePlayerCounts = function()
     end
     isUpdatingPlayerCounts = true
 
-    local servers, success = fetchAllServers()
-    if not success then
-        isUpdatingPlayerCounts = false
-        return
-    end
+    pcall(function()
+        local servers, success = fetchAllServers()
+        if not success then
+            return
+        end
 
-    local lookup = {}
-    for _, server in ipairs(servers) do
-        lookup[server.id] = server
-    end
+        local lookup = {}
+        for _, server in ipairs(servers) do
+            lookup[server.id] = server
+        end
 
-    for _, saved in ipairs(_G.SavedJobIds) do
-        if saved.gameName == gameName then
-            local label = playerCountLabels[saved.label]
-            local shiftLabel = shiftLabels[saved.label]
-            local trimmedJobId = trimJobId(saved.jobId)
+        for _, saved in ipairs(_G.SavedJobIds) do
+            if saved.gameName == gameName then
+                local label = playerCountLabels[saved.label]
+                local shiftLabel = shiftLabels[saved.label]
+                local trimmedJobId = trimJobId(saved.jobId)
 
-            if trimmedJobId == game.JobId then
-                saved.playing = #Players:GetPlayers()
-                saved.maxPlayers = Players.MaxPlayers
-                if isAnimalHospitalGame then
-                    saved.shift = Players:GetAttribute("Night")
-                end
-            else
-                local server = lookup[trimmedJobId]
-                if server then
-                    saved.playing = server.playing
-                    saved.maxPlayers = server.maxPlayers
-                elseif not saved.maxPlayers then
-                    saved.playing = 0
+                if trimmedJobId == game.JobId then
+                    saved.playing = #Players:GetPlayers()
                     saved.maxPlayers = Players.MaxPlayers
+                    saved.missCount = 0
+                    if isAnimalHospitalGame then
+                        saved.shift = Players:GetAttribute("Night")
+                    end
+                else
+                    local server = lookup[trimmedJobId]
+                    if server then
+                        saved.playing = server.playing or 0
+                        saved.maxPlayers = server.maxPlayers or Players.MaxPlayers
+                        saved.missCount = 0
+                    else
+                        saved.missCount = (saved.missCount or 0) + 1
+                        if not saved.maxPlayers or saved.missCount >= 5 then
+                            saved.playing = 0
+                            saved.maxPlayers = Players.MaxPlayers
+                        end
+                    end
                 end
-            end
 
-            if label then
-                label.Text = buildPlayersText(saved)
-            end
-            if shiftLabel then
-                shiftLabel.Text = buildShiftText(saved)
+                if label then
+                    label.Text = buildPlayersText(saved)
+                end
+                if shiftLabel then
+                    shiftLabel.Text = buildShiftText(saved)
+                end
             end
         end
-    end
+    end)
 
     isUpdatingPlayerCounts = false
 end
