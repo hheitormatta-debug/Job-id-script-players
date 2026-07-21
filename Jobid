@@ -230,8 +230,26 @@ local function buildShiftText(saved)
     return ""
 end
 
+local function formatServerAge(totalSeconds)
+    totalSeconds = math.floor(totalSeconds)
+    local years = math.floor(totalSeconds / 31536000)
+    totalSeconds = totalSeconds % 31536000
+    local months = math.floor(totalSeconds / 2592000)
+    totalSeconds = totalSeconds % 2592000
+    local weeks = math.floor(totalSeconds / 604800)
+    totalSeconds = totalSeconds % 604800
+    local days = math.floor(totalSeconds / 86400)
+    totalSeconds = totalSeconds % 86400
+    local hours = math.floor(totalSeconds / 3600)
+    totalSeconds = totalSeconds % 3600
+    local minutes = math.floor(totalSeconds / 60)
+    local seconds = totalSeconds % 60
+    return "Age: " .. years .. "y " .. months .. "mo " .. weeks .. "w " .. days .. "d " .. hours .. "h " .. minutes .. "m " .. seconds .. "s"
+end
+
 local playerCountLabels = {}
 local shiftLabels = {}
+local ageLabels = {}
 local isUpdatingPlayerCounts = false
 local refreshSavedList
 local updatePlayerCounts
@@ -572,16 +590,19 @@ refreshSavedList = function()
     savedList:ClearAllChildren()
     playerCountLabels = {}
     shiftLabels = {}
+    ageLabels = {}
     local y = 0
     for index, saved in ipairs(_G.SavedJobIds) do
         if saved.gameName == gameName then
-            local itemHeight = isAnimalHospitalGame and 66 or 50
+            local isCurrent = trimJobId(saved.jobId) == game.JobId
+            local baseHeight = isAnimalHospitalGame and 66 or 50
+            local itemHeight = isCurrent and (baseHeight + 24) or baseHeight
             local item = Instance.new("Frame", savedList)
             item.Size = UDim2.new(1, 0, 0, itemHeight)
             item.Position = UDim2.new(0, 0, 0, y)
             item.BackgroundTransparency = 1
 
-            if trimJobId(saved.jobId) == game.JobId then
+            if isCurrent then
                 local stroke = Instance.new("UIStroke", item)
                 stroke.Color = Color3.fromRGB(100, 200, 100)
                 stroke.Thickness = 2
@@ -632,6 +653,19 @@ refreshSavedList = function()
                 shiftLbl.TextSize = 16
                 shiftLbl.TextXAlignment = Enum.TextXAlignment.Left
                 shiftLabels[saved.label] = shiftLbl
+            end
+
+            if isCurrent then
+                local ageLbl = Instance.new("TextLabel", item)
+                ageLbl.Text = formatServerAge(workspace.DistributedGameTime)
+                ageLbl.Size = UDim2.new(1, -12, 0, 20)
+                ageLbl.Position = UDim2.new(0, 6, 0, baseHeight)
+                ageLbl.BackgroundTransparency = 1
+                ageLbl.TextColor3 = Color3.fromRGB(90, 90, 90)
+                ageLbl.Font = Enum.Font.Gotham
+                ageLbl.TextSize = 11
+                ageLbl.TextXAlignment = Enum.TextXAlignment.Left
+                ageLabels[saved.label] = ageLbl
             end
 
             local copy = Instance.new("TextButton", item)
@@ -699,6 +733,20 @@ local function syncCurrentShiftDisplay()
 end
 
 Players:GetAttributeChangedSignal("Night"):Connect(syncCurrentShiftDisplay)
+
+task.spawn(function()
+    while true do
+        task.wait(1)
+        for _, saved in ipairs(_G.SavedJobIds) do
+            if saved.gameName == gameName and trimJobId(saved.jobId) == game.JobId then
+                local ageLabel = ageLabels[saved.label]
+                if ageLabel then
+                    ageLabel.Text = formatServerAge(workspace.DistributedGameTime)
+                end
+            end
+        end
+    end
+end)
 
 local page2 = Instance.new("Frame", mainFrame)
 page2.Size = UDim2.new(1, 0, 1, -34)
